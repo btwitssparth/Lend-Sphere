@@ -13,6 +13,7 @@ export const generateAccessAndRefreshTokens = async (userId) => {
         return { accessToken, refreshToken };
 
     } catch (error) {
-        throw new Error("Error generating tokens");
+       console.error("Error generating tokens:", error);
+       throw error
     }
 }
