@@ -2,19 +2,23 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
+// Import Routes
+import userRouter from './src/routes/User.routes.js';
+
 const app = express();
 
-app.use(cors
-    ({
-        origin:process.env.CROSS_ORIGIN,
-        Credentials:true
-    }))
+app.use(cors({
+    origin: process.env.CROSS_ORIGIN,
+    credentials: true
+}));
 
-app.use(express.json({limit:"16kb"}));
-app.use(express.urlencoded({extended:true,limit:"16kb"}))
+app.use(express.json({limit: "16kb"}));
+app.use(express.urlencoded({extended: true, limit: "16kb"}));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-//Routes
-import userRouter from './src/routes/User.routes.js'
-export {app}
+// --- FIX IS HERE: Mount the router ---
+app.use("/api/v1/users", userRouter); 
+// -------------------------------------
+
+export { app };
