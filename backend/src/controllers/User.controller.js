@@ -17,43 +17,59 @@ const cookieOptions= {
     secure:process.env.NODE_ENV==='production',
 };
 
-const registerUser= asyncHandler(async(req,res)=>{
-    const {name,email,password}=req.body;
+const registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
 
-    if ([name,email,password].some((field)=>field?.trim()==='')){
-        throw new ApiError(400,"All fields are required");
-    }
+  if (!name || !email || !password) {
+    throw new ApiError(400, "All fields are required");
+  }
 
-    const existedUser= await User.findOne({email});
-    if (existedUser){
-        throw new ApiError(409,"User with this email already exists");
-    }
+  const existedUser = await User.findOne({ email });
+  if (existedUser) {
+    throw new ApiError(409, "User with this email already exists");
+  }
 
-    const hashedPassword= await hashPassword(password);
+  const hashedPassword = await hashPassword(password);
 
-    const user= await User.create({
-        name,
-        email,
-        password:hashedPassword,
-        roles:{renting:true,lending:false}
-    });
+  const user = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    roles: { renting: true, lending: false },
+  });
 
-    const createdUser = await User.findById(user._id).select('-password -refreshToken');
+  // ✅ THIS VARIABLE MUST EXIST
+  const createdUser = await User.findById(user._id)
+    .select("-password -refreshToken");
 
-    if (!createdUser) {
-        throw new ApiError(500, "Something went wrong while creating the user");
+  if (!createdUser) {
+    throw new ApiError(500, "User creation failed");
+  }
 
-    }
-    //Auto-login after registration
+  const { accessToken, refreshToken } =
+    await generateAccessAndRefreshTokens(user._id);
 
-    const {accessToken,refreshToken}= await generateAccessAndRefreshTokens(user._id);
-    return res
+  return res
     .status(201)
-    .cookie("accessToken",accessToken,cookieOptions)
-    .cookie("refreshToken",refreshToken,cookieOptions)
-    .json(new ApiResponse(200,createdUser,"User registered successfully"))
-    
+    .cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    })
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    })
+    .json(
+      new ApiResponse(
+        200,
+        { user: createdUser },
+        "User registered successfully"
+      )
+    );
 });
+
 
 const loginUser= asyncHandler(async(req,res)=>{
     const {email,password}=req.body;
@@ -80,9 +96,27 @@ const loginUser= asyncHandler(async(req,res)=>{
 
     return res
     .status(200)
-    .cookie("accessToken",accessToken,cookieOptions)
-    .cookie("refreshToken",refreshToken,cookieOptions)
-    .json(new ApiResponse(200,{user:loggedInUser,accessToken,refreshToken},"User logged in successfully"));
+  .cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 15 * 60 * 1000, // access token expiry
+  })
+  .cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // refresh token expiry
+  })
+  .json(
+    new ApiResponse(
+      200,
+      { user: createdUser },
+      "Authentication successful"
+    )
+  );
+
+   
 
 });
 
@@ -159,11 +193,20 @@ const switchUserRole= asyncHandler(async(req,res)=>{
 
 });
 
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User fetched successfully"));
+});
+
 export{
     registerUser,
     loginUser,
     googleLogin,
     logoutUser,
-    switchUserRole
+    switchUserRole,
+    getCurrentUser
     
 };

@@ -4,7 +4,8 @@ import {
     loginUser, 
     logoutUser, 
     googleLogin, 
-    switchUserRole, 
+    switchUserRole,
+    getCurrentUser, 
 
 } from "../controllers/User.controller.js"
 import { verifyJwt } from "../middlewares/Auth.middleware.js";
@@ -17,8 +18,10 @@ router.route("/login").post(loginUser);
 router.route("/google-login").post(googleLogin);
 //router.route("/forgot-password").post(forgotPassword);
 
+
 // Secured Routes (Require Login)
 router.route("/logout").post(verifyJwt, logoutUser);
 router.route("/switch-role").post(verifyJwt, switchUserRole);
+router.route("/me",verifyJwt,getCurrentUser);
 
 export default router;
