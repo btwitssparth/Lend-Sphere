@@ -21,4 +21,17 @@ app.use(cookieParser());
 app.use("/api/v1/users", userRouter); 
 // -------------------------------------
 
+app.use((err, req, res, next) => {
+    const statusCode = err.statuscode || err.statusCode || 500; // Handle your lowercase 'statuscode'
+    const message = err.message || "Internal Server Error";
+
+    res.status(statusCode).json({
+        success: false,
+        message,
+        errors: err.errors || [],
+        stack: process.env.NODE_ENV === "production" ? null : err.stack
+    });
+});
+
+
 export { app };

@@ -1,66 +1,35 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import axios from "axios";
 
-// 🔹 LOGIN
-export const loginUser = async (payload) => {
-  const res = await fetch(`${API_URL}/api/v1/users/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-    credentials: "include", // ✅ REQUIRED FOR COOKIES
-  });
+// Using env variable for the API URL
+const API_URL = `${import.meta.env.VITE_API_URL}/api/v1/users`;
 
-  const json = await res.json();
+// Configure axios to always send cookies
+axios.defaults.withCredentials = true;
 
-  if (!res.ok) {
-    throw new Error(json.message || "Login failed");
-  }
-
-  // backend sends { user }
-  return json.data;
+export const registerUser = async (userData) => {
+    const response = await axios.post(`${API_URL}/register`, userData);
+    return response.data.data;
 };
 
-// 🔹 REGISTER
-export const registerUser = async (payload) => {
-  const res = await fetch(`${API_URL}/api/v1/users/register`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-    credentials: "include", // ✅ REQUIRED
-  });
-
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json.message || "Registration failed");
-  }
-
-  return json.data;
+export const loginUser = async (userData) => {
+    const response = await axios.post(`${API_URL}/login`, userData);
+    return response.data.data;
 };
 
-// 🔹 GET CURRENT USER (PERSIST LOGIN)
-export const getCurrentUser = async () => {
-  const res = await fetch(`${API_URL}/api/v1/users/me`, {
-    method: "GET",
-    credentials: "include", // ✅ SEND COOKIES
-  });
-
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json.message || "Failed to fetch user");
-  }
-
-  return json.data;
-};
-
-// 🔹 LOGOUT
 export const logoutUser = async () => {
-  await fetch(`${API_URL}/api/v1/users/logout`, {
-    method: "POST",
-    credentials: "include", // ✅ CLEAR COOKIE ON BACKEND
+    const response = await axios.post(`${API_URL}/logout`);
+    return response.data.data;
+};
+
+export const getCurrentUser = async () => {
+    const response = await axios.get(`${API_URL}/me`);
+    return response.data.data;
+};
+
+// --- NEW FUNCTION ---
+export const googleLoginUser = async (credential) => {
+  const response = await axios.post(`${API_URL}/google-login`, { 
+    credential 
   });
+  return response.data.data;
 };

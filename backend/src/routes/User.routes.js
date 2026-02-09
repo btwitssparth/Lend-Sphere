@@ -22,6 +22,5 @@ router.route("/google-login").post(googleLogin);
 // Secured Routes (Require Login)
 router.route("/logout").post(verifyJwt, logoutUser);
 router.route("/switch-role").post(verifyJwt, switchUserRole);
-router.route("/me",verifyJwt,getCurrentUser);
-
+router.route("/me").get(verifyJwt, getCurrentUser);
 export default router;
