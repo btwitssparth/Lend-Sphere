@@ -18,7 +18,7 @@ export const loginUser = async (payload) => {
   }
 
   // backend sends { user }
-  return json.data.user;
+  return json.data;
 };
 
 // 🔹 REGISTER
@@ -38,7 +38,7 @@ export const registerUser = async (payload) => {
     throw new Error(json.message || "Registration failed");
   }
 
-  return json.data.user;
+  return json.data;
 };
 
 // 🔹 GET CURRENT USER (PERSIST LOGIN)
