@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 
 // Import Routes
 import userRouter from './src/routes/User.routes.js';
+import productRouter from './src/routes/Product.routes.js'
 
 const app = express();
 
@@ -17,9 +18,12 @@ app.use(express.urlencoded({extended: true, limit: "16kb"}));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-// --- FIX IS HERE: Mount the router ---
+
+// ..............Routes............
+//User Routes
 app.use("/api/v1/users", userRouter); 
-// -------------------------------------
+// Product Routes
+app.use("/api/v1/products",productRouter);
 
 app.use((err, req, res, next) => {
     const statusCode = err.statuscode || err.statusCode || 500; // Handle your lowercase 'statuscode'
