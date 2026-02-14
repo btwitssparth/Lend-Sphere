@@ -5,7 +5,7 @@ import { Product } from '../models/Product.model.js'
 import {uploadOnCloudinary} from '../utils/Cloudinary.js'
 
 //1. Add a new product
-const addProduct= asyncHandler(async(requestAnimationFrame,res)=>{
+const addProduct= asyncHandler(async(req,res)=>{
     if(!req.user.roles.lending){
         throw new ApiError(403,"You must switch to lending role");
 

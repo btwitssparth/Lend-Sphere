@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 // Import Routes
 import userRouter from './src/routes/User.routes.js';
 import productRouter from './src/routes/Product.routes.js'
+import rentalRouter from './src/routes/Rental.routes.js'
 
 const app = express();
 
@@ -20,22 +21,38 @@ app.use(cookieParser());
 
 
 // ..............Routes............
+
 //User Routes
 app.use("/api/v1/users", userRouter); 
+
 // Product Routes
 app.use("/api/v1/products",productRouter);
 
+//rental routes
+app.use("/api/v1/rentals",rentalRouter);
+
+
+
 app.use((err, req, res, next) => {
-    const statusCode = err.statuscode || err.statusCode || 500; // Handle your lowercase 'statuscode'
+    // 1. Ensure statusCode is a valid number. Default to 500 if missing or invalid.
+    let statusCode = err.statuscode || err.statusCode || 500;
+    
+    // Safety check: If statusCode is somehow a string or invalid, force it to 500
+    if (isNaN(Number(statusCode))) {
+        statusCode = 500;
+    }
+
+    // 2. Extract the message
     const message = err.message || "Internal Server Error";
 
-    res.status(statusCode).json({
+    // 3. Send the response
+    res.status(Number(statusCode)).json({
         success: false,
-        message,
+        message: message,
         errors: err.errors || [],
         stack: process.env.NODE_ENV === "production" ? null : err.stack
     });
 });
 
-
 export { app };
+
