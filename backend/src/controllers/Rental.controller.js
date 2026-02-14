@@ -68,4 +68,44 @@ const getMyRentals = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, rentals, "My rentals fetched Successfully"));
 });
 
-export { rentItem, getMyRentals };
+//3 Get Rentals for my products (Lender View)
+
+const getLenderRentals= asyncHandler(async(req,res)=>{
+    const rentals = await Rental.find()
+    .populate({
+        path: "product",
+        match:{owner:req.user._id},
+        select:"name pricePerDay"
+    })
+    .populate("renter","name email")
+    .sort({createdAt:-1});
+
+    const myLendingRequests= rentals.filter(rental=>rental.product !== null);
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,myLendingRequests,"Incoming rental requests fetched"));
+});
+
+// 4 update Rental Status (Accept/Reject)
+const updateRentalStatus = asyncHandler(async(req,res)=>{
+    const {rentalId,status}= req.body;
+
+    const rental = await Rental.findById(rentalId).populate("product");
+    if(!rental){
+        throw new ApiError(404,"Rental request not found");
+    }
+
+    //verify that the logged in user is the owner of the product
+    if(rental.product.owner.toString()!== req.user._id.toString()){
+        throw new ApiError(403,"You can only manage rentals for your own products")
+
+    }
+    rental.status= status;
+    await rental.save();
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,rental,`Rental status updated to ${status}`));
+});
+export { rentItem, getMyRentals,getLenderRentals,updateRentalStatus };
