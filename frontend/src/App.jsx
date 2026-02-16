@@ -1,10 +1,19 @@
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./Context/AuthContext";
-import AuthPage from "./pages/AuthPage"; // Import the new page
+
+// Components
+import Navbar from "./components/Navbar";
+
+// Pages
+import AuthPage from "./pages/AuthPage";
+import Home from "./pages/Home";
+import AddProduct from "./pages/AddProduct";
+import ProductDetails from "./pages/ProductDetails";
 
 function App() {
-  const { user, logout, loading } = useAuth();
+  const { loading } = useAuth();
 
-  // 1. Show a loading spinner while checking auth status
+  // 1. Loading Screen (Kept from your original code)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -13,27 +22,27 @@ function App() {
     );
   }
 
-  // 2. If no user is logged in, show the new Auth Page (Login/Register)
-  if (!user) {
-    return <AuthPage />;
-  }
-
-  // 3. If user IS logged in, show the Dashboard (Temporary placeholder)
   return (
-    <div className="min-h-screen bg-slate-100 p-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-4">
-          Welcome back, <span className="text-brand-600">{user.name || user.email}</span>!
-        </h1>
-        <p className="text-slate-600 mb-6">You are now successfully logged in.</p>
-        
-        <button 
-          onClick={logout}
-          className="px-4 py-2 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors"
-        >
-          Logout
-        </button>
-      </div>
+    <div className="min-h-screen bg-slate-50">
+      {/* Navbar appears on all pages */}
+      <Navbar />
+
+      {/* Main Content Area */}
+      <main>
+        <Routes>
+          {/* Public Routes (Everyone can see) */}
+          <Route path="/" element={<Home />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/login" element={<AuthPage />} />
+
+          {/* Protected Route (Lenders Only) */}
+          {/* You could add a wrapper here to check user.roles.lending later */}
+          <Route path="/add-product" element={<AddProduct />} />
+
+          {/* Catch all - Redirect to Home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
     </div>
   );
 }
