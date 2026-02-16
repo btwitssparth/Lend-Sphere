@@ -20,3 +20,15 @@ export const getAllProducts = async (search = "", category = "") => {
 export const getProductById = async (id) => {
     return api.get(`/products/${id}`);
 };
+
+// Update Product
+export const updateProduct = async (id, formData) => {
+    return api.patch(`/products/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};
+
+// Delete Product
+export const deleteProduct = async (id) => {
+    return api.delete(`/products/${id}`);
+};

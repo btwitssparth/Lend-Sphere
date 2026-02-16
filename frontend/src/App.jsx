@@ -9,6 +9,7 @@ import AuthPage from "./pages/AuthPage";
 import Home from "./pages/Home";
 import AddProduct from "./pages/AddProduct";
 import ProductDetails from "./pages/ProductDetails";
+import EditProduct from "./pages/EditProduct";
 
 function App() {
   const { loading } = useAuth();
@@ -41,6 +42,8 @@ function App() {
 
           {/* Catch all - Redirect to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
+
+          <Route path="/edit-product/:id" element={<EditProduct />} />
         </Routes>
       </main>
     </div>
