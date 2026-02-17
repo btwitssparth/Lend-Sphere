@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProductById, deleteProduct } from '../api/products'; // Added deleteProduct
+import { getProductById, deleteProduct } from '../api/products';
 import api from '../api/axios';
-import { useAuth } from '../Context/AuthContext'; // Import Auth to check owner
+import { useAuth } from '../Context/AuthContext';
+import { Button } from '../components/Ui/Button';
+import { MapPin, User, Calendar, ShieldCheck, Tag } from 'lucide-react';
 
 const ProductDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth(); // Get current user
-    
+    const { user } = useAuth();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
-    
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
@@ -21,7 +21,7 @@ const ProductDetails = () => {
                 const response = await getProductById(id);
                 setProduct(response.data.data);
             } catch (error) {
-                console.error("Error fetching product:", error);
+                console.error("Error", error);
             } finally {
                 setLoading(false);
             }
@@ -29,96 +29,123 @@ const ProductDetails = () => {
         fetchProduct();
     }, [id]);
 
-    // Handle Delete
     const handleDelete = async () => {
-        if (window.confirm("Are you sure you want to delete this item? This cannot be undone.")) {
-            try {
-                await deleteProduct(id);
-                alert("Product deleted successfully");
-                navigate('/');
-            } catch (error) {
-                alert("Failed to delete product");
-            }
+        if (window.confirm("Delete this item?")) {
+            await deleteProduct(id);
+            navigate('/');
         }
     };
 
-    // Handle Rent (Existing logic)
     const handleRent = async (e) => {
         e.preventDefault();
         try {
             await api.post('/rentals/request', { productId: product._id, startDate, endDate });
-            alert("Rental Request Sent!");
-            navigate('/');
+            alert("Request sent!");
+            navigate('/my-rentals');
         } catch (error) {
-            alert(error.response?.data?.message || "Rental failed");
+            alert("Failed to request rental");
         }
     };
 
-    if (loading) return <div className="text-center py-10">Loading...</div>;
-    if (!product) return <div className="text-center py-10">Product not found.</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    if (!product) return <div>Product not found</div>;
 
-    // Check if current user is the owner
     const isOwner = user && product.owner?._id === user._id;
 
     return (
-        <div className="container mx-auto p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white p-6 rounded-lg shadow-sm">
-                <div>
-                    <img src={product.productImage} alt={product.name} className="w-full h-96 object-cover rounded-lg" />
-                </div>
-
-                <div className="space-y-4">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <h1 className="text-3xl font-bold">{product.name}</h1>
-                            <p className="text-gray-500 uppercase tracking-wide">{product.category}</p>
-                        </div>
-                        
-                        {/* OWNER ACTIONS */}
-                        {isOwner && (
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => navigate(`/edit-product/${product._id}`)}
-                                    className="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 text-sm"
-                                >
-                                    Edit
-                                </button>
-                                <button 
-                                    onClick={handleDelete}
-                                    className="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 text-sm"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        )}
+        <div className="max-w-7xl mx-auto px-4 pt-28 pb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                
+                {/* Left Column: Images & Info */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="rounded-3xl overflow-hidden shadow-sm aspect-video bg-slate-100">
+                        <img src={product.productImage} alt={product.name} className="w-full h-full object-cover" />
                     </div>
 
-                    <p className="text-2xl font-bold text-blue-600">₹{product.pricePerDay} <span className="text-sm text-gray-500 font-normal">/ day</span></p>
-                    <p className="text-gray-700 leading-relaxed">{product.description}</p>
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h1 className="text-3xl font-bold text-slate-900 mb-2">{product.name}</h1>
+                                <div className="flex items-center text-slate-500">
+                                    <MapPin className="w-4 h-4 mr-2" />
+                                    {product.location}
+                                </div>
+                            </div>
+                            {isOwner && (
+                                <div className="flex gap-3">
+                                    <Button variant="secondary" onClick={() => navigate(`/edit-product/${product._id}`)}>Edit</Button>
+                                    <Button variant="danger" onClick={handleDelete}>Delete</Button>
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Rent Form (Hide if owner) */}
-                    {!isOwner ? (
-                        <div className="border-t pt-4 mt-4">
-                            <h3 className="font-semibold mb-3">Rent this Item</h3>
-                            <form onSubmit={handleRent} className="space-y-3">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm text-gray-600 block mb-1">From</label>
-                                        <input type="date" className="w-full p-2 border rounded" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+                        <div className="border-t border-b border-slate-100 py-6 flex gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                                    <User />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-500">Listed by</p>
+                                    <p className="font-semibold text-slate-900">{product.owner?.name || "LendSphere User"}</p>
+                                </div>
+                            </div>
+                            <div className="w-px bg-slate-200"></div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-600">
+                                    <Tag />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-500">Category</p>
+                                    <p className="font-semibold text-slate-900">{product.category}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold text-lg mb-3">Description</h3>
+                            <p className="text-slate-600 leading-relaxed whitespace-pre-line">{product.description}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Sticky Booking Card */}
+                <div className="relative">
+                    <div className="sticky top-28 bg-white rounded-3xl border border-slate-200 shadow-xl p-6 lg:p-8">
+                        <div className="flex items-end gap-2 mb-6">
+                            <span className="text-3xl font-bold text-slate-900">₹{product.pricePerDay}</span>
+                            <span className="text-slate-500 mb-1">/ day</span>
+                        </div>
+
+                        {!isOwner ? (
+                            <form onSubmit={handleRent} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-slate-500 uppercase">Start Date</label>
+                                        <input type="date" required className="w-full p-3 border rounded-xl bg-slate-50" value={startDate} onChange={e => setStartDate(e.target.value)} />
                                     </div>
-                                    <div>
-                                        <label className="text-sm text-gray-600 block mb-1">To</label>
-                                        <input type="date" className="w-full p-2 border rounded" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-slate-500 uppercase">End Date</label>
+                                        <input type="date" required className="w-full p-3 border rounded-xl bg-slate-50" value={endDate} onChange={e => setEndDate(e.target.value)} />
                                     </div>
                                 </div>
-                                <button type="submit" className="w-full bg-black text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition">Request Rental</button>
+                                <Button className="w-full py-4 text-lg" type="submit">
+                                    Request to Rent
+                                </Button>
+                                <p className="text-xs text-center text-slate-400 mt-2">You won't be charged yet</p>
                             </form>
+                        ) : (
+                            <div className="bg-slate-50 p-4 rounded-xl text-center text-slate-600">
+                                This is your listing. Check the Dashboard for requests.
+                            </div>
+                        )}
+                        
+                        <div className="mt-6 space-y-3 pt-6 border-t border-slate-100">
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                                <ShieldCheck className="w-4 h-4 text-green-500" />
+                                <span>LendSphere Protection Guarantee</span>
+                            </div>
                         </div>
-                    ) : (
-                        <div className="mt-6 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm">
-                            💡 You own this item. You can edit details or remove it from the marketplace.
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>
