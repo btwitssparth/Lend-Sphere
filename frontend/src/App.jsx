@@ -10,6 +10,8 @@ import Home from "./pages/Home";
 import AddProduct from "./pages/AddProduct";
 import ProductDetails from "./pages/ProductDetails";
 import EditProduct from "./pages/EditProduct";
+import MyRentals from "./pages/MyRentals";
+import LenderDashboard from "./pages/LenderDashboard";
 
 function App() {
   const { loading } = useAuth();
@@ -44,6 +46,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
 
           <Route path="/edit-product/:id" element={<EditProduct />} />
+          <Route path="/my-rentals" element={<MyRentals />} />
+          <Route path="/lender-dashboard" element={<LenderDashboard />} />
         </Routes>
       </main>
     </div>

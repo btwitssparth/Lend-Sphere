@@ -10,7 +10,7 @@ const Navbar = () => {
     try {
       await api.post('/users/switch-role');
       alert("Role switched successfully! Refreshing profile...");
-      window.location.reload(); // Simple reload to fetch new role status in Context
+      window.location.reload(); 
     } catch (error) {
       console.error("Failed to switch role", error);
     }
@@ -21,7 +21,7 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  if (loading) return null; // Don't show navbar while loading
+  if (loading) return null; 
 
   return (
     <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
@@ -43,14 +43,26 @@ const Navbar = () => {
 
             {user ? (
               <>
-                {/* Lender Action */}
+                {/* --- NEW LINK: My Rentals (Visible to everyone logged in) --- */}
+                <Link to="/my-rentals" className="text-slate-600 hover:text-slate-900 font-medium">
+                  My Rentals
+                </Link>
+
+                {/* --- Lender Specific Links --- */}
                 {user.roles?.lending && (
-                  <Link 
-                    to="/add-product" 
-                    className="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700"
-                  >
-                    + List Item
-                  </Link>
+                  <>
+                    {/* --- NEW LINK: Lender Dashboard --- */}
+                    <Link to="/lender-dashboard" className="text-slate-600 hover:text-slate-900 font-medium">
+                      Lender Dashboard
+                    </Link>
+
+                    <Link 
+                      to="/add-product" 
+                      className="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 ml-2"
+                    >
+                      + List Item
+                    </Link>
+                  </>
                 )}
 
                 {/* User Dropdown / Info */}

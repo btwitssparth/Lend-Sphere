@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // <--- 1. Import this
 import { Input } from '../Ui/Input';
 import { Button } from '../Ui/Button';
 import { SocialAuth } from './SocialAuth';
@@ -15,6 +16,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
     });
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+    const navigate = useNavigate(); // <--- 2. Initialize hook
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -29,13 +31,16 @@ const RegisterForm = ({ onSwitchToLogin }) => {
 
         setLoading(true);
         try {
-            // Mapping fullName to 'name' as expected by your backend
             const data = await registerUser({ 
                 name: formData.fullName, 
                 email: formData.email, 
                 password: formData.password 
             });
             login(data.user, data.accessToken);
+            
+            // <--- 3. Navigate to Home immediately after success
+            navigate('/');
+            
         } catch (err) {
             alert(err.message || "Registration failed");
         } finally {
@@ -43,6 +48,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
         }
     };
 
+    // ... keep your existing JSX ...
     return (
         <div className="space-y-6">
             <div className="text-center mb-8">

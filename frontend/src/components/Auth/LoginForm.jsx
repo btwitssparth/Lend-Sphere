@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // <--- 1. Import this
 import { Input } from '../Ui/Input';
 import { Button } from '../Ui/Button';
 import { SocialAuth } from './SocialAuth';
@@ -12,6 +13,7 @@ const LoginForm = ({ onSwitchToRegister }) => {
     const [loading, setLoading] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
     const { login } = useAuth();
+    const navigate = useNavigate(); // <--- 2. Initialize hook
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,6 +21,10 @@ const LoginForm = ({ onSwitchToRegister }) => {
         try {
             const data = await loginUser({ email, password });
             login(data.user, data.accessToken);
+            
+            // <--- 3. Navigate to Home immediately after success
+            navigate('/'); 
+            
         } catch (err) {
             alert(err.message || "Login failed");
         } finally {
@@ -26,9 +32,11 @@ const LoginForm = ({ onSwitchToRegister }) => {
         }
     };
 
+    // ... rest of your return code remains exactly the same ...
     return (
         <div className="space-y-6">
-            <div className="text-center mb-8">
+            {/* ... keep your existing JSX ... */}
+             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
                 <p className="text-slate-600 mt-2">
                     Don't have an account?{' '}

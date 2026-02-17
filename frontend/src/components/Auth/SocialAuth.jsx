@@ -1,11 +1,13 @@
 import React from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom'; // <--- 1. Import useNavigate
 import { Button } from '../Ui/Button';
 import { useAuth } from '../../Context/AuthContext';
 import { googleLoginUser } from '../../services/auth.service';
 
 export const SocialAuth = () => {
   const { login } = useAuth();
+  const navigate = useNavigate(); // <--- 2. Initialize the hook
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -13,7 +15,12 @@ export const SocialAuth = () => {
         console.log("Google Token:", tokenResponse);
         // Send the Access Token to backend
         const data = await googleLoginUser(tokenResponse.access_token);
+        
         login(data.user, data.accessToken);
+        
+        // <--- 3. Redirect to Home immediately after success
+        navigate('/'); 
+
       } catch (error) {
         console.error("Google Login Failed:", error);
         alert("Google Login Failed. Please try again.");
