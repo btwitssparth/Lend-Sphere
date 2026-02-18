@@ -12,11 +12,11 @@ import ProductDetails from "./pages/ProductDetails";
 import EditProduct from "./pages/EditProduct";
 import MyRentals from "./pages/MyRentals";
 import LenderDashboard from "./pages/LenderDashboard";
+import UploadID from "./pages/UploadId"; // <--- Imported Verification Page
 
 function App() {
   const { loading } = useAuth();
 
-  // 1. Loading Screen (Kept from your original code)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -27,27 +27,26 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Navbar appears on all pages */}
       <Navbar />
 
-      {/* Main Content Area */}
       <main>
         <Routes>
-          {/* Public Routes (Everyone can see) */}
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/login" element={<AuthPage />} />
 
-          {/* Protected Route (Lenders Only) */}
-          {/* You could add a wrapper here to check user.roles.lending later */}
+          {/* Secured Routes */}
           <Route path="/add-product" element={<AddProduct />} />
-
-          {/* Catch all - Redirect to Home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-
           <Route path="/edit-product/:id" element={<EditProduct />} />
           <Route path="/my-rentals" element={<MyRentals />} />
           <Route path="/lender-dashboard" element={<LenderDashboard />} />
+
+          {/* Verification Route */}
+          <Route path="/upload-id" element={<UploadID />} />
+
+          {/* Catch all - Redirect to Home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>

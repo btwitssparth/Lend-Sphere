@@ -7,6 +7,7 @@ import { generateAccessAndRefreshTokens } from '../utils/token.js';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import axios from 'axios'; // <--- REQUIRED: Import axios
+import {uploadOnCloudinary} from '../utils/Cloudinary.js'
 
 // Initialize Google OAuth2 Client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -187,4 +188,28 @@ const changePassword = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, null, "Password changed successfully"));
 });
 
-export { registerUser, loginUser, googleLogin, logoutUser, getCurrentUser, switchUserRole, refreshAccessToken, updateUserProfile, changePassword };
+const uploadIdentityProof = asyncHandler(async(req,res)=>{
+    const idLocalPath = req.file?.path;
+    if(!idLocalPath){
+        throw new ApiError(400, "Identity proof file is required");
+    }
+
+    const idImage = await uploadOnCloudinary(idLocalPath);
+    if(!idImage){
+        throw new ApiError(500, "Failed to upload identity proof");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            identityProof: idImage.secure_url,
+            hasUploadedID: true,
+        },
+        { new: true }
+    ).select("-password");
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user))
+})
+
+export { registerUser, loginUser, googleLogin, logoutUser, getCurrentUser, switchUserRole, refreshAccessToken, updateUserProfile, changePassword,uploadIdentityProof };

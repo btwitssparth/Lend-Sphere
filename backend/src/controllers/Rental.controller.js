@@ -77,7 +77,7 @@ const getLenderRentals= asyncHandler(async(req,res)=>{
         match:{owner:req.user._id},
         select:"name pricePerDay"
     })
-    .populate("renter","name email")
+    .populate("renter","name email identityProof")
     .sort({createdAt:-1});
 
     const myLendingRequests= rentals.filter(rental=>rental.product !== null);
@@ -108,4 +108,5 @@ const updateRentalStatus = asyncHandler(async(req,res)=>{
     .status(200)
     .json(new ApiResponse(200,rental,`Rental status updated to ${status}`));
 });
+
 export { rentItem, getMyRentals,getLenderRentals,updateRentalStatus };

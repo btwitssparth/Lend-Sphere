@@ -46,6 +46,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         select: false,
     },
+    identityProof:{
+        type: String,
+        default: null,
+    },
+    hasUploadedID:{
+        type: Boolean,
+        default: false,
+    }
 
 },
     { timestamps: true }
