@@ -15,10 +15,10 @@ const productSchema = new Schema({
         type: String,
         required: true,
     },
-    productImage: {
+    productImages:[ {
         type: String,
         required: true,
-    },
+    }],
     pricePerDay: {
         type: Number,
         required: true,

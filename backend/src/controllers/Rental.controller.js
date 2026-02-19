@@ -60,7 +60,7 @@ const rentItem = asyncHandler(async (req, res) => {
 // 2. Get My Rentals (Items I have rented)
 const getMyRentals = asyncHandler(async (req, res) => {
     const rentals = await Rental.find({ renter: req.user._id })
-        .populate("product", "name productImage pricePerDay")
+        .populate("product", "name productImage pricePerDay productImages")
         .sort({ createdAt: -1 });
 
     return res
@@ -75,7 +75,7 @@ const getLenderRentals= asyncHandler(async(req,res)=>{
     .populate({
         path: "product",
         match:{owner:req.user._id},
-        select:"name pricePerDay"
+        select:"name pricePerDay productImage productImages"
     })
     .populate("renter","name email identityProof")
     .sort({createdAt:-1});

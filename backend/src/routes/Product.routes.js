@@ -18,11 +18,11 @@ router.route("/:id").get(getProductById);
 // Secured Routes (Management)
 router.route("/add").post(
     verifyJwt, 
-    upload.single("productImage"), 
+    upload.array("productImages", 5), 
     addProduct
 );
 
-router.route("/:id").patch(verifyJwt, upload.single("productImage"), updateProduct);
+router.route("/:id").patch(verifyJwt, upload.array("productImages", 5), updateProduct);
 router.route("/:id").delete(verifyJwt, deleteProduct);
 
 export default router;

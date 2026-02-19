@@ -5,40 +5,52 @@ import { Product } from '../models/Product.model.js'
 import {uploadOnCloudinary} from '../utils/Cloudinary.js'
 
 //1. Add a new product
-const addProduct= asyncHandler(async(req,res)=>{
+// backend/src/controllers/product.controller.js
+
+const addProduct = asyncHandler(async(req, res) => {
     if(!req.user.roles.lending){
         throw new ApiError(403,"You must switch to lending role");
-
     }
-    const {name,description,category,pricePerDay,location}= req.body;
+    
+    const {name, description, category, pricePerDay, location} = req.body;
 
-    if ([name, description, category, location,pricePerDay].some((field) => field?.trim() === "")) {
+    if ([name, description, category, location, pricePerDay].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     }
 
-    //handle image upload 
-    const imageLocalPath= req.file?.path;
-    if(!imageLocalPath){
-        throw new ApiError(400,"Product image is required")
-    }
-    const productImage= await uploadOnCloudinary(imageLocalPath);
-    if(!productImage){
-        throw new ApiError(500,"Failed to upload product image")
+    // 1. Check for multiple files instead of a single file
+    const imageLocalPaths = req.files?.map(file => file.path);
+    if(!imageLocalPaths || imageLocalPaths.length === 0){
+        throw new ApiError(400, "At least one product image is required");
     }
 
-    const product= await Product.create({
-        owner:req.user._id,
+    // 2. Upload all images concurrently to Cloudinary
+    const uploadPromises = imageLocalPaths.map(path => uploadOnCloudinary(path));
+    const uploadedImages = await Promise.all(uploadPromises);
+
+    // 3. Extract the URLs and filter out any failed uploads
+    const productImages = uploadedImages
+        .filter(image => image !== null)
+        .map(image => image.url);
+
+    if(productImages.length === 0){
+        throw new ApiError(500, "Failed to upload product images");
+    }
+
+    // 4. Save to database using the new array field
+    const product = await Product.create({
+        owner: req.user._id,
         name,
         description,
         category,
         pricePerDay,
         location,
-        productImage:productImage.url
+        productImages // Using the array of URLs here
     });
 
     return res
     .status(201)
-    .json(new ApiResponse(201,product,"Product added successfully"))
+    .json(new ApiResponse(201, product, "Product added successfully"));
 });
 
 // get all products
@@ -81,6 +93,9 @@ const getProductById= asyncHandler(async(req,res)=>{
 })
 
 //Update Product
+// backend/src/controllers/product.controller.js
+
+//Update Product
 const updateProduct = asyncHandler(async(req,res)=>{
     const {id}= req.params;
     const {name,description,category,pricePerDay,location,isAvailable}= req.body;
@@ -103,16 +118,22 @@ const updateProduct = asyncHandler(async(req,res)=>{
     if(location) product.location=location;
     if(isAvailable !== undefined) product.isAvailable=isAvailable;
 
-    if(req.file){
-        const imageLocalPath= req.file.path;
-        const productImage= await uploadOnCloudinary(imageLocalPath);
-        if(!productImage){
-            throw new ApiError(500,"Failed to upload product image")
-        }
-        if(productImage){
-            product.productImage=productImage.url;
+    // Handle multiple images if new ones are uploaded
+    if(req.files && req.files.length > 0){
+        const imageLocalPaths = req.files.map(file => file.path);
+        const uploadPromises = imageLocalPaths.map(path => uploadOnCloudinary(path));
+        const uploadedImages = await Promise.all(uploadPromises);
+        
+        const newImages = uploadedImages
+            .filter(image => image !== null)
+            .map(image => image.url);
+
+        if(newImages.length > 0){
+            // This replaces the old images with the new ones
+            product.productImages = newImages;
         }
     }
+    
     await product.save();
     return res
     .status(200)

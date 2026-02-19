@@ -1,40 +1,66 @@
-import React from 'react';
+import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import { twMerge } from 'tailwind-merge';
 
-export const Button = ({ 
-  children, 
-  variant = 'primary', 
-  isLoading, 
-  className, 
-  ...props 
-}) => {
-  const baseStyles = "inline-flex items-center justify-center rounded-xl font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed";
-  
-  const variants = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30",
-    secondary: "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm",
-    outline: "border-2 border-slate-200 text-slate-600 hover:border-slate-900 hover:text-slate-900 bg-transparent",
-    ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100 border border-red-100",
-  };
+// A utility function to concatenate class names (acts similarly to standard clsx/tailwind-merge)
+const cn = (...classes) => classes.filter(Boolean).join(' ');
 
-  const sizes = {
-    sm: "px-3 py-1.5 text-xs",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-8 py-3.5 text-base",
-  };
+const Button = forwardRef(({ 
+    className, 
+    variant = 'default', 
+    size = 'default', 
+    asChild = false, 
+    children, 
+    disabled,
+    type = 'button',
+    ...props 
+}, ref) => {
+    
+    // 1. Base styles applied to all buttons
+    // Includes strict focus states for accessibility and flat transition rules
+    const baseStyles = "inline-flex items-center justify-center font-medium ring-offset-white dark:ring-offset-zinc-950 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 dark:focus-visible:ring-zinc-100 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none whitespace-nowrap";
 
-  return (
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      className={twMerge(baseStyles, variants[variant], sizes[props.size || 'md'], className)}
-      disabled={isLoading}
-      {...props}
-    >
-      {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-      {children}
-    </motion.button>
-  );
-};
+    // 2. Variants (Strictly flat colors, NO gradients)
+    const variants = {
+        default: "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 border border-transparent shadow-sm",
+        outline: "border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm",
+        secondary: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-transparent",
+        ghost: "hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-900 dark:text-zinc-50 border border-transparent",
+        danger: "bg-red-500 text-white hover:bg-red-600 dark:bg-red-900 dark:text-red-100 dark:hover:bg-red-800 border border-transparent shadow-sm",
+        link: "text-zinc-900 dark:text-zinc-50 underline-offset-4 hover:underline border border-transparent",
+    };
+
+    // 3. Sizes (matching the spacing system used in Home.jsx)
+    const sizes = {
+        default: "h-10 px-4 py-2 text-sm rounded-md",
+        sm: "h-8 px-3 text-xs rounded-md",
+        lg: "h-14 px-8 text-base rounded-lg font-semibold", // Specifically sized for the Hero search button
+        icon: "h-10 w-10 rounded-md flex items-center justify-center",
+    };
+
+    // Construct the final standard Tailwind string
+    const buttonClasses = cn(
+        baseStyles,
+        variants[variant],
+        sizes[size],
+        className
+    );
+
+    return (
+        <motion.button
+            ref={ref}
+            type={type}
+            className={buttonClasses}
+            disabled={disabled}
+            // Subtle, premium micro-interaction on click
+            whileTap={disabled ? {} : { scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            {...props}
+        >
+            {children}
+        </motion.button>
+    );
+});
+
+Button.displayName = "Button";
+
+export { Button };
