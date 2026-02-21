@@ -6,6 +6,8 @@ import cookieParser from 'cookie-parser';
 import userRouter from './src/routes/User.routes.js';
 import productRouter from './src/routes/Product.routes.js'
 import rentalRouter from './src/routes/Rental.routes.js'
+import messageRouter from "./src/routes/Message.routes.js";
+
 
 const app = express();
 
@@ -31,6 +33,8 @@ app.use("/api/v1/products",productRouter);
 //rental routes
 app.use("/api/v1/rentals",rentalRouter);
 
+//message routes
+app.use("/api/v1/messages",messageRouter);
 
 
 app.use((err, req, res, next) => {
