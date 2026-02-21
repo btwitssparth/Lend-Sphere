@@ -7,7 +7,6 @@ const rentalSchema = new Schema(
             ref: "User",
             required: true
         },
-
         product: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product",
@@ -29,10 +28,18 @@ const rentalSchema = new Schema(
             type: String,
             enum: ["Pending", "Approved", "Active", "Completed", "Cancelled"],
             default: "Pending"
+        },
+        // 🔥 NEW: Track if it's reviewed and link the review data
+        isReviewed: {
+            type: Boolean,
+            default: false
+        },
+        review: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Review"
         }
-
     },
     { timestamps: true }
 );
 
-export const Rental = mongoose.model("Rental",rentalSchema);
+export const Rental = mongoose.model("Rental", rentalSchema);

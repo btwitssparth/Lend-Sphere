@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProductById, deleteProduct } from '../api/products';
 import { rentProduct, getUnavailableDates } from '../api/rentals';
+import { getProductReviews } from '../api/reviews'; // 🔥 Added Reviews API
 import { useAuth } from '../Context/AuthContext';
 import { Button } from '../components/Ui/Button';
-import { MapPin, User, ShieldCheck, Tag, ArrowLeft, Edit, Trash2, Calendar, AlertCircle } from 'lucide-react';
+import { MapPin, User, ShieldCheck, Tag, ArrowLeft, Edit, Trash2, Calendar, AlertCircle, Star } from 'lucide-react'; // 🔥 Added Star Icon
 import { motion } from 'framer-motion';
 
 const ProductDetails = () => {
@@ -17,6 +18,10 @@ const ProductDetails = () => {
     const [loading, setLoading] = useState(true);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+    // Reviews State
+    const [reviews, setReviews] = useState([]);
+    const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
+
     // Booking State
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -27,13 +32,23 @@ const ProductDetails = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                // Fetch product and unavailable dates concurrently
-                const [productRes, datesRes] = await Promise.all([
+                // 🔥 Fetch product, dates, AND reviews all at the same time
+                const [productRes, datesRes, reviewsRes] = await Promise.all([
                     getProductById(id),
-                    getUnavailableDates(id)
+                    getUnavailableDates(id),
+                    getProductReviews(id).catch(() => ({ data: { data: { reviews: [], averageRating: 0, totalReviews: 0 } } })) // Failsafe
                 ]);
+                
                 setProduct(productRes.data.data);
                 setUnavailableDates(datesRes.data.data);
+                
+                if (reviewsRes?.data?.data) {
+                    setReviews(reviewsRes.data.data.reviews);
+                    setReviewStats({
+                        averageRating: reviewsRes.data.data.averageRating,
+                        totalReviews: reviewsRes.data.data.totalReviews
+                    });
+                }
             } catch (error) {
                 console.error("Error fetching product details:", error);
                 navigate('/'); 
@@ -58,13 +73,12 @@ const ProductDetails = () => {
                 return;
             }
 
-            // Frontend Overlap Detection
             const hasOverlap = unavailableDates.some(booking => {
                 const bookedStart = new Date(booking.startDate);
                 const bookedEnd = new Date(booking.endDate);
                 return (
-                    (start <= bookedStart && end >= bookedStart) || // Engulfs or overlaps front
-                    (start >= bookedStart && start <= bookedEnd)    // Starts inside existing booking
+                    (start <= bookedStart && end >= bookedStart) || 
+                    (start >= bookedStart && start <= bookedEnd)    
                 );
             });
 
@@ -74,7 +88,6 @@ const ProductDetails = () => {
                 return;
             }
 
-            // Calculate Price
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             const totalDays = diffDays === 0 ? 1 : diffDays;
@@ -123,6 +136,15 @@ const ProductDetails = () => {
             setBookingError(error.response?.data?.message || "Failed to request rental");
         } finally {
             setBookingLoading(false);
+        }
+    };
+
+    // Helper to force open native date picker
+    const openDatePicker = (e) => {
+        try {
+            e.target.showPicker();
+        } catch (error) {
+            // Fallback for older browsers
         }
     };
 
@@ -185,7 +207,17 @@ const ProductDetails = () => {
                         <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
                             <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
                                 <div>
-                                    <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight mb-3">{product.name}</h1>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">{product.name}</h1>
+                                        
+                                        {/* 🔥 Rating Badge Next to Title */}
+                                        {reviewStats.totalReviews > 0 && (
+                                            <div className="flex items-center bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 px-2.5 py-1 rounded-md text-sm font-bold border border-amber-200 dark:border-amber-900/50">
+                                                <Star className="w-4 h-4 mr-1 fill-amber-500 text-amber-500" />
+                                                {reviewStats.averageRating} <span className="text-amber-600/70 dark:text-amber-500/70 ml-1 text-xs font-semibold">({reviewStats.totalReviews})</span>
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="flex items-center text-zinc-500 dark:text-zinc-400 font-medium">
                                         <MapPin className="w-4 h-4 mr-1.5" />
                                         {product.location}
@@ -227,12 +259,58 @@ const ProductDetails = () => {
                                 </div>
                             </div>
 
-                            <div>
+                            <div className="mb-12">
                                 <h3 className="font-bold text-xl text-zinc-900 dark:text-zinc-50 mb-4 tracking-tight">About this item</h3>
                                 <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed whitespace-pre-line text-lg">
                                     {product.description}
                                 </p>
                             </div>
+
+                            {/* 🔥 Reviews Section 🔥 */}
+                            <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                                <h3 className="font-bold text-2xl text-zinc-900 dark:text-zinc-50 mb-6 tracking-tight flex items-center gap-2">
+                                    Reviews
+                                    <span className="text-sm bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-2.5 py-0.5 rounded-full font-bold">
+                                        {reviewStats.totalReviews}
+                                    </span>
+                                </h3>
+
+                                {reviews.length === 0 ? (
+                                    <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl p-8 text-center border border-dashed border-zinc-300 dark:border-zinc-800">
+                                        <Star className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                                        <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg mb-1">No reviews yet</h4>
+                                        <p className="text-zinc-500 dark:text-zinc-400 text-sm">Be the first to rent this gear and share your experience!</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {reviews.map((review) => (
+                                            <div key={review._id} className="p-5 bg-zinc-50 dark:bg-zinc-900/30 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs uppercase">
+                                                            {review.reviewer?.name?.charAt(0) || "U"}
+                                                        </div>
+                                                        <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">{review.reviewer?.name || "Anonymous User"}</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        {[...Array(review.rating)].map((_, i) => (
+                                                            <Star key={i} className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                                                        ))}
+                                                        {[...Array(5 - review.rating)].map((_, i) => (
+                                                            <Star key={i} className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700" />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">"{review.comment}"</p>
+                                                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-3 font-medium">
+                                                    {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
                     </motion.div>
 
@@ -249,13 +327,14 @@ const ProductDetails = () => {
                                 <form onSubmit={handleRent} className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Start Date</label>
+                                            <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider cursor-pointer">Start Date</label>
                                             <div className="relative">
                                                 <input 
                                                     type="date" 
                                                     min={today}
                                                     required 
-                                                    className="w-full h-12 pl-10 pr-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-sm font-medium focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none transition-all appearance-none" 
+                                                    onClick={openDatePicker}
+                                                    className="w-full h-12 pl-10 pr-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-sm font-medium focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none transition-all appearance-none cursor-pointer" 
                                                     value={startDate} 
                                                     onChange={e => setStartDate(e.target.value)} 
                                                 />
@@ -263,13 +342,14 @@ const ProductDetails = () => {
                                             </div>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">End Date</label>
+                                            <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider cursor-pointer">End Date</label>
                                             <div className="relative">
                                                 <input 
                                                     type="date" 
                                                     min={startDate || today}
                                                     required 
-                                                    className="w-full h-12 pl-10 pr-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-sm font-medium focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none transition-all appearance-none" 
+                                                    onClick={openDatePicker}
+                                                    className="w-full h-12 pl-10 pr-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-sm font-medium focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none transition-all appearance-none cursor-pointer" 
                                                     value={endDate} 
                                                     onChange={e => setEndDate(e.target.value)} 
                                                 />

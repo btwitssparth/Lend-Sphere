@@ -7,7 +7,7 @@ import userRouter from './src/routes/User.routes.js';
 import productRouter from './src/routes/Product.routes.js'
 import rentalRouter from './src/routes/Rental.routes.js'
 import messageRouter from "./src/routes/Message.routes.js";
-
+import reviewRouter from "./src/routes/Review.routes.js"
 
 const app = express();
 
@@ -35,6 +35,9 @@ app.use("/api/v1/rentals",rentalRouter);
 
 //message routes
 app.use("/api/v1/messages",messageRouter);
+
+//review routes
+app.use("/api/v1/reviews",reviewRouter);
 
 
 app.use((err, req, res, next) => {

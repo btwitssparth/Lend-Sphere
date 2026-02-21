@@ -106,6 +106,7 @@ const getUnavailableDates = asyncHandler(async (req, res) => {
 const getMyRentals = asyncHandler(async (req, res) => {
     const rentals = await Rental.find({ renter: req.user._id })
         .populate("product", "name productImage pricePerDay productImages")
+        .populate("review")
         .sort({ createdAt: -1 });
 
     return res
@@ -122,6 +123,7 @@ const getLenderRentals = asyncHandler(async(req, res)=>{
             select: "name pricePerDay productImage productImages"
         })
         .populate("renter", "name email identityProof")
+        .populate("review")
         .sort({ createdAt: -1 });
 
     const myLendingRequests = rentals.filter(rental => rental.product !== null);

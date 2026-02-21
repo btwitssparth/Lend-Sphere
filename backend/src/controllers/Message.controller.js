@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Message } from "../models/Message.model.js";
 import { Rental } from "../models/Rental.model.js";
-
+import { getIo } from "../socket.js"; // 🔥 THIS WAS MISSING!
 
 // get messages for a rental
 const getMessages = asyncHandler(async(req,res)=>{
@@ -28,18 +28,10 @@ const getMessages = asyncHandler(async(req,res)=>{
     const isChatLocked = ["Pending", "Completed", "Cancelled"].includes(rental.status);
 
     return res.status(200).json(new ApiResponse(200,{messages,isChatLocked},"Messages fetched successfully"));
-
 });
 
 
-
-
-
-
-
-
 //send a message
-
 const sendMessages = asyncHandler(async (req, res) => {
     const { rentalId, text } = req.body;
     const senderId = req.user._id;
@@ -55,14 +47,13 @@ const sendMessages = asyncHandler(async (req, res) => {
     const isRenter = rental.renter.toString() === senderId.toString();
     const isLender = rental.product.owner.toString() === senderId.toString();
 
-    if (!isRenter && !isLender) throw new ApiError(403, "Not Authorizes");
+    if (!isRenter && !isLender) throw new ApiError(403, "Not Authorized");
     if (rental.status === "Pending") throw new ApiError(403, "Chat unlocks after approval");
     if (["Completed", "Cancelled"].includes(rental.status)) throw new ApiError(403, "Chat is closed for completed or cancelled rentals");
 
     const receiverId = isRenter ? rental.product.owner : rental.renter;
 
     //save to db
-
     const newMessage = await Message.create({
         rental: rentalId,
         sender: senderId,
@@ -70,8 +61,10 @@ const sendMessages = asyncHandler(async (req, res) => {
         text
     });
 
+    // Fire the socket now that it is imported!
     const io = getIo();
     io.to(rentalId).emit("receive_message", newMessage);
+    
     return res.status(201).json(new ApiResponse(201, newMessage, "Message sent successfully"));
 });
 
