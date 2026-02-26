@@ -7,6 +7,11 @@ const rentalSchema = new Schema(
             ref: "User",
             required: true
         },
+        // 🔥 NEW: Store the Renter's Address
+        renterAddress: {
+            type: String,
+            required: true
+        },
         product: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Product",
@@ -26,10 +31,9 @@ const rentalSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ["Pending", "Approved", "Active", "Completed", "Cancelled"],
+            enum: ["Pending", "Approved", "Active", "Completed", "Cancelled", "Rejected"],
             default: "Pending"
         },
-        // 🔥 NEW: Track if it's reviewed and link the review data
         isReviewed: {
             type: Boolean,
             default: false

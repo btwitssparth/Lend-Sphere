@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { addProduct } from '../api/products';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Upload, DollarSign, MapPin, Type, AlignLeft, Tag, Loader2 } from 'lucide-react';
+import { Upload, DollarSign, MapPin, Type, AlignLeft, Tag, Loader2, Navigation } from 'lucide-react'; // 🔥 Added Navigation icon
 import { Button } from '../components/Ui/Button';
 
 const AddProduct = () => {
@@ -16,7 +16,8 @@ const AddProduct = () => {
         category: '',
         pricePerDay: '',
         location: '',
-        productImages: [] 
+        latitude: '',  // 🔥 New state
+        longitude: ''  // 🔥 New state
     });
 
     const handleChange = (e) => {
@@ -35,6 +36,27 @@ const AddProduct = () => {
         
         const newPreviews = files.map(file => URL.createObjectURL(file));
         setPreviews(newPreviews);
+    };
+
+    // 🔥 NEW: Grab GPS coordinates
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser");
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setFormData({
+                    ...formData,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    location: "Current Location" // Fill text so user knows it worked
+                });
+            },
+            () => {
+                alert("Unable to retrieve your location. Please check your browser permissions.");
+            }
+        );
     };
 
     const handleSubmit = async (e) => {
@@ -110,11 +132,6 @@ const AddProduct = () => {
                                     </div>
                                 )}
                             </div>
-                            {previews.length > 0 && (
-                                <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-2 transition-colors">
-                                    Click the area above to change your selected photos.
-                                </p>
-                            )}
                         </div>
 
                         {/* Basic Info */}
@@ -191,19 +208,30 @@ const AddProduct = () => {
                                 </div>
                             </div>
 
+                            {/* 🔥 UPDATED LOCATION WITH GPS BUTTON 🔥 */}
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Location</label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
-                                    <input 
-                                        type="text" 
-                                        name="location" 
-                                        required 
-                                        value={formData.location}
-                                        placeholder="e.g. Mumbai, Bandra West" 
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                        onChange={handleChange}
-                                    />
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
+                                        <input 
+                                            type="text" 
+                                            name="location" 
+                                            required 
+                                            value={formData.location}
+                                            placeholder="e.g. Mumbai, Bandra West" 
+                                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                    <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        onClick={handleGetLocation}
+                                        className="shrink-0 px-4 bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
+                                    >
+                                        <Navigation className="w-5 h-5" />
+                                    </Button>
                                 </div>
                             </div>
                         </div>

@@ -8,6 +8,8 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import axios from 'axios'; // <--- REQUIRED: Import axios
 import {uploadOnCloudinary} from '../utils/Cloudinary.js'
+import {Product} from '../models/Product.model.js'
+import {Review} from '../models/Review.model.js'
 
 // Initialize Google OAuth2 Client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -212,4 +214,39 @@ const uploadIdentityProof = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200,user))
 })
 
-export { registerUser, loginUser, googleLogin, logoutUser, getCurrentUser, switchUserRole, refreshAccessToken, updateUserProfile, changePassword,uploadIdentityProof };
+const getUserProfile = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    // 1. Get the user's basic info (excluding password and ID proof)
+    const userProfile = await User.findById(userId).select("name email createdAt");
+    if (!userProfile) {
+        throw new ApiError(404, "User not found");
+    }
+
+    // 2. Get all products owned by this user
+    const products = await Product.find({ owner: userId }).sort({ createdAt: -1 });
+
+    // 3. Find all reviews for products owned by this user
+    const productIds = products.map(p => p._id);
+    const reviews = await Review.find({ product: { $in: productIds } })
+        .populate("reviewer", "name")
+        .populate("product", "name")
+        .sort({ createdAt: -1 });
+
+    // 4. Calculate their overall Lender Rating
+    const totalReviews = reviews.length;
+    const averageRating = totalReviews > 0 
+        ? (reviews.reduce((acc, item) => item.rating + acc, 0) / totalReviews).toFixed(1) 
+        : 0;
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            profile: userProfile,
+            products,
+            reviews,
+            stats: { totalReviews, averageRating }
+        }, "User profile fetched successfully")
+    );
+});
+
+export { registerUser, loginUser, googleLogin, logoutUser, getCurrentUser, switchUserRole, refreshAccessToken, updateUserProfile, changePassword,uploadIdentityProof, getUserProfile};

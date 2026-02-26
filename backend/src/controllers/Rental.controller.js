@@ -5,49 +5,33 @@ import { Rental } from "../models/Rental.model.js";
 import { Product } from "../models/Product.model.js";
 
 // 1. Rent a Product 
+// 1. Rent a Product 
 const rentItem = asyncHandler(async (req, res) => {
-    const { productId, startDate, endDate } = req.body;
+    // 🔥 ADDED renterAddress here
+    const { productId, startDate, endDate, renterAddress } = req.body;
 
-    if (!productId || !startDate || !endDate) {
-        throw new ApiError(400, "All fields are required");
+    if (!productId || !startDate || !endDate || !renterAddress) {
+        throw new ApiError(400, "All fields, including your address, are required");
     }
 
-    // STRIP TIME: Set everything to exactly midnight to prevent timezone bugs
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
-    
     const end = new Date(endDate);
     end.setHours(0, 0, 0, 0);
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Date Validations
-    if (start < today) {
-        throw new ApiError(400, "Start date cannot be in the past");
-    }
-    if (end <= start) {
-        throw new ApiError(400, "End date must be after start date");
-    }
+    if (start < today) throw new ApiError(400, "Start date cannot be in the past");
+    if (end <= start) throw new ApiError(400, "End date must be after start date");
 
     const product = await Product.findById(productId);
+    if (!product) throw new ApiError(404, "Product not found");
+    if (!product.isAvailable) throw new ApiError(400, "Product is currently not available");
+    if (product.owner.toString() === req.user._id.toString()) throw new ApiError(400, "You cannot rent your own product");
 
-    if (!product) {
-        throw new ApiError(404, "Product not found");
-    }
-    
-    if (!product.isAvailable) {
-        throw new ApiError(400, "Product is currently not available for rent");
-    }
-
-    if (product.owner.toString() === req.user._id.toString()) {
-        throw new ApiError(400, "You cannot rent your own product");
-    }
-
-    // --- FIXED: "Approved" instead of "Accepted" ---
     const conflictingRentals = await Rental.find({
         product: productId,
-        status: { $in: ['Pending', 'Approved', 'Active'] }, // Fixed Enum!
+        status: { $in: ['Pending', 'Approved', 'Active'] },
         $or: [
             { startDate: { $lte: start }, endDate: { $gte: start } },
             { startDate: { $lte: end }, endDate: { $gte: end } },
@@ -55,11 +39,8 @@ const rentItem = asyncHandler(async (req, res) => {
         ]
     });
 
-    if (conflictingRentals.length > 0) {
-        throw new ApiError(409, "These dates are already booked for this item");
-    }
+    if (conflictingRentals.length > 0) throw new ApiError(409, "These dates are already booked");
 
-    // Calculate total price accurately
     const timeDiff = end.getTime() - start.getTime();
     const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
     const totalDays = days === 0 ? 1 : days; 
@@ -67,6 +48,7 @@ const rentItem = asyncHandler(async (req, res) => {
 
     const rental = await Rental.create({
         renter: req.user._id,
+        renterAddress, // 🔥 Saved to DB
         product: productId,
         startDate: start,
         endDate: end,
@@ -74,9 +56,7 @@ const rentItem = asyncHandler(async (req, res) => {
         status: "Pending"
     });
 
-    return res
-        .status(201)
-        .json(new ApiResponse(201, rental, "Rental request sent successfully"));
+    return res.status(201).json(new ApiResponse(201, rental, "Rental request sent successfully"));
 });
 
 // 2. Get Unavailable Dates 

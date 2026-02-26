@@ -15,6 +15,10 @@ const productSchema = new Schema({
         type: String,
         required: true,
     },
+    category: {
+        type: String,
+        required: true
+    },
     productImages:[ {
         type: String,
         required: true,
@@ -32,11 +36,23 @@ const productSchema = new Schema({
         type: Boolean,
         default: true
     },
-
-},
-    {
-        timestamps: true
+    // 🔥 NEW: Geospatial data for 5km map search
+    geoLocation: {
+        type: {
+            type: String,
+            enum: ['Point'], 
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [Longitude, Latitude]
+            default: [0, 0]
+        }
     }
-);
+}, {
+    timestamps: true
+});
 
-export const Product = mongoose.model("Product",productSchema);
+// 🔥 Tell MongoDB to map this field on a 2D sphere (the Earth)
+productSchema.index({ geoLocation: "2dsphere" });
+
+export const Product = mongoose.model("Product", productSchema);

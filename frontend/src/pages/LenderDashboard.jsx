@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getLenderRequests, updateRentalStatus } from '../api/rentals';
 import { motion } from 'framer-motion';
-// 🔥 Added 'Lock' to the lucide-react imports
-import { Plus, User, Calendar, DollarSign, Check, X, MessageCircle, Package, CheckCircle, Star, Lock } from 'lucide-react';
+// 🔥 Added MapPin for the address icon
+import { Plus, User, Calendar, DollarSign, Check, X, MessageCircle, Package, CheckCircle, Star, Lock, TrendingUp, Wallet, Clock, Activity, MapPin } from 'lucide-react';
 import { Button } from '../components/Ui/Button';
 import { Link } from 'react-router-dom';
 import ChatBox from '../components/Chat/Chatbox';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const LenderDashboard = () => {
     const [requests, setRequests] = useState([]);
@@ -46,20 +47,71 @@ const LenderDashboard = () => {
         setIsChatOpen(true);
     };
 
+    // 🔥 SMART ANALYTICS ENGINE 🔥
+    const stats = useMemo(() => {
+        let totalEarned = 0;
+        let activeCount = 0;
+        let pendingCount = 0;
+
+        const monthly = {};
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        const today = new Date();
+        for(let i = 5; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            monthly[months[d.getMonth()]] = 0; 
+        }
+
+        requests.forEach(req => {
+            if (req.status === 'Completed') {
+                totalEarned += req.totalPrice;
+                const date = new Date(req.updatedAt || req.createdAt);
+                const m = months[date.getMonth()];
+                if (monthly[m] !== undefined) {
+                    monthly[m] += req.totalPrice;
+                }
+            } else if (req.status === 'Approved' || req.status === 'Active') {
+                activeCount++;
+            } else if (req.status === 'Pending') {
+                pendingCount++;
+            }
+        });
+
+        return {
+            totalEarned,
+            activeCount,
+            pendingCount,
+            chartData: Object.keys(monthly).map(k => ({ name: k, earnings: monthly[k] }))
+        };
+    }, [requests]);
+
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center pt-20 bg-white dark:bg-zinc-950 transition-colors">
             <div className="w-8 h-8 border-4 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin"></div>
         </div>
     );
 
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 rounded-xl shadow-xl">
+                    <p className="text-zinc-500 dark:text-zinc-400 text-xs font-bold uppercase tracking-wider mb-1">{label}</p>
+                    <p className="text-zinc-900 dark:text-zinc-50 font-black text-lg">₹{payload[0].value}</p>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
         <div className="min-h-screen pt-28 pb-12 px-4 bg-white dark:bg-zinc-950 transition-colors duration-300">
             <div className="max-w-6xl mx-auto">
                 
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                         <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">Lender Dashboard</h1>
-                        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Manage incoming requests and your earnings.</p>
+                        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Manage your business and track your revenue.</p>
                     </motion.div>
                     
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -71,18 +123,74 @@ const LenderDashboard = () => {
                     </motion.div>
                 </div>
 
+                {/* Analytics Section */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-10 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div className="bg-zinc-50 dark:bg-zinc-900/40 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                            <div>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-sm font-bold tracking-wider uppercase mb-1">Total Earnings</p>
+                                <h3 className="text-3xl font-black text-zinc-900 dark:text-zinc-50">₹{stats.totalEarned}</h3>
+                            </div>
+                            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-500 rounded-xl flex items-center justify-center">
+                                <Wallet className="w-6 h-6" />
+                            </div>
+                        </div>
+
+                        <div className="bg-zinc-50 dark:bg-zinc-900/40 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                            <div>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-sm font-bold tracking-wider uppercase mb-1">Active Rentals</p>
+                                <h3 className="text-3xl font-black text-zinc-900 dark:text-zinc-50">{stats.activeCount}</h3>
+                            </div>
+                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-500 rounded-xl flex items-center justify-center">
+                                <Activity className="w-6 h-6" />
+                            </div>
+                        </div>
+
+                        <div className="bg-zinc-50 dark:bg-zinc-900/40 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                            <div>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-sm font-bold tracking-wider uppercase mb-1">Pending Requests</p>
+                                <h3 className="text-3xl font-black text-zinc-900 dark:text-zinc-50">{stats.pendingCount}</h3>
+                            </div>
+                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 rounded-xl flex items-center justify-center">
+                                <Clock className="w-6 h-6" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Revenue Area Chart */}
+                    <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm h-[300px]">
+                        <div className="flex items-center gap-2 mb-6">
+                            <TrendingUp className="w-5 h-5 text-zinc-400" />
+                            <h3 className="font-bold text-zinc-900 dark:text-zinc-50 text-lg">Revenue Overview (Last 6 Months)</h3>
+                        </div>
+                        <ResponsiveContainer width="100%" height="80%">
+                            <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#18181b" stopOpacity={0.2} className="dark:stopColor-zinc-100 dark:stopOpacity-30" />
+                                        <stop offset="95%" stopColor="#18181b" stopOpacity={0} className="dark:stopColor-zinc-100 dark:stopOpacity-0" />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#52525b" opacity={0.2} />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#71717a', fontSize: 12, fontWeight: 600 }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#71717a', fontSize: 12, fontWeight: 600 }} dx={-10} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Area type="monotone" dataKey="earnings" stroke="#18181b" strokeWidth={3} fillOpacity={1} fill="url(#colorEarnings)" className="dark:stroke-zinc-100" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </motion.div>
+
+                <h3 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight mb-6">Manage Requests</h3>
+
                 {requests.length === 0 ? (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }} 
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="text-center py-24 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 transition-colors"
-                    >
+                    <div className="text-center py-20 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 transition-colors">
                         <div className="w-16 h-16 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm transform -rotate-3">
                             <Package className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">All caught up!</h3>
-                        <p className="text-zinc-500 dark:text-zinc-400">No pending requests right now. Keep your gear listed to earn more.</p>
-                    </motion.div>
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">No incoming requests</h3>
+                        <p className="text-zinc-500 dark:text-zinc-400">Keep your gear listed and well-priced to attract renters.</p>
+                    </div>
                 ) : (
                     <div className="grid gap-5">
                         {requests.map((rental, index) => (
@@ -107,12 +215,21 @@ const LenderDashboard = () => {
                                         <div className="md:col-span-5">
                                             <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 mb-1 line-clamp-1">{rental.product?.name}</h3>
                                             <div className="flex flex-col gap-1.5 mt-2">
+                                                
                                                 <div className="flex items-center text-sm text-zinc-600 dark:text-zinc-400 font-medium">
                                                     <User className="w-4 h-4 mr-2" />
                                                     Requested by <span className="text-zinc-900 dark:text-zinc-100 font-bold ml-1">{rental.renter?.name}</span>
                                                 </div>
+
+                                                {/* 🔥 NEW: Show Renter Address */}
+                                                {rental.renterAddress && (
+                                                    <div className="flex items-start text-sm text-zinc-600 dark:text-zinc-400 font-medium">
+                                                        <MapPin className="w-4 h-4 mr-2 text-zinc-400 shrink-0 mt-0.5" />
+                                                        <span>Usage Location: <span className="text-zinc-900 dark:text-zinc-100 font-bold ml-1">{rental.renterAddress}</span></span>
+                                                    </div>
+                                                )}
                                                 
-                                                {/* 🔥 NEW PRIVACY LOGIC: Only show ID if Pending, Approved, or Active 🔥 */}
+                                                {/* ID Privacy Lock */}
                                                 {rental.renter?.identityProof && (
                                                     ['Pending', 'Approved', 'Active'].includes(rental.status) ? (
                                                         <a 
@@ -165,7 +282,7 @@ const LenderDashboard = () => {
                                                         <Check className="w-4 h-4 mr-1" /> Approve
                                                     </Button>
                                                     <Button 
-                                                        onClick={() => handleStatusUpdate(rental._id, "Cancelled")} // Kept mapped to Cancelled!
+                                                        onClick={() => handleStatusUpdate(rental._id, "Cancelled")}
                                                         variant="danger"
                                                         size="sm"
                                                         className="flex-1 sm:flex-none"

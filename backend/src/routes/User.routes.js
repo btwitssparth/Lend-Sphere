@@ -6,7 +6,9 @@ import {
     googleLogin, 
     switchUserRole,
     getCurrentUser, 
-    uploadIdentityProof // <--- 1. Ensure this is imported
+    uploadIdentityProof,
+    getUserProfile
+    
 } from "../controllers/User.controller.js"
 
 // <--- 2. FIX IMPORT NAME (verifyJwt)
@@ -21,6 +23,7 @@ const router = Router();
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/google-login").post(googleLogin);
+router.route("/profile/:userId").get(getUserProfile)
 
 // Secured Routes
 router.route("/logout").post(verifyJwt, logoutUser);

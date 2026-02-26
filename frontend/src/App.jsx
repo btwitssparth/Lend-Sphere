@@ -13,6 +13,7 @@ import EditProduct from "./pages/EditProduct";
 import MyRentals from "./pages/MyRentals";
 import LenderDashboard from "./pages/LenderDashboard";
 import UploadID from "./pages/UploadId"; // <--- Imported Verification Page
+import PublicProfile from "./pages/PublicProfile";
 
 function App() {
   const { loading } = useAuth();
@@ -47,6 +48,9 @@ function App() {
 
           {/* Catch all - Redirect to Home */}
           <Route path="*" element={<Navigate to="/" replace />} />
+          //Public Profile Route
+          <Route path="/profile/:id" element={<PublicProfile />} />
+
         </Routes>
       </main>
     </div>

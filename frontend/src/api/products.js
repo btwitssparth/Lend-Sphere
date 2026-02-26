@@ -8,12 +8,8 @@ export const addProduct = async (productData) => {
 };
 
 // Get All Products (Supports Search & Filter)
-export const getAllProducts = async (search = "", category = "") => {
-    const params = new URLSearchParams();
-    if (search) params.append("search", search);
-    if (category) params.append("category", category);
-    
-    return api.get(`/products?${params.toString()}`);
+export const getAllProducts = async (search = "", category = "", location = "", lat = "", lng = "", radius = 5) => {
+    return api.get(`/products?search=${search}&category=${category}&location=${location}&lat=${lat}&lng=${lng}&radius=${radius}`);
 };
 
 // Get Single Product
