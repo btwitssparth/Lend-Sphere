@@ -8,6 +8,7 @@ import productRouter from './src/routes/Product.routes.js'
 import rentalRouter from './src/routes/Rental.routes.js'
 import messageRouter from "./src/routes/Message.routes.js";
 import reviewRouter from "./src/routes/Review.routes.js"
+import chatRouter from './src/routes/Chat.routes.js';
 
 const app = express();
 
@@ -38,6 +39,9 @@ app.use("/api/v1/messages",messageRouter);
 
 //review routes
 app.use("/api/v1/reviews",reviewRouter);
+
+//chat routes
+app.use("/api/v1/chat", chatRouter);
 
 
 app.use((err, req, res, next) => {
