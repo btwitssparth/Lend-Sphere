@@ -14,6 +14,7 @@ import MyRentals from './pages/MyRentals';
 import LenderDashboard from './pages/LenderDashboard';
 import UploadId from './pages/UploadId';
 import PublicProfile from './pages/PublicProfile';
+import AdminDashboard from './pages/AdminDashboard';
 
 // REMOVED LoginForm/RegisterForm imports if they aren't used directly here
 
@@ -49,6 +50,8 @@ function App() {
           
           {/* Verification */}
           <Route path="/upload-id" element={<UploadId />} />
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </main>
 

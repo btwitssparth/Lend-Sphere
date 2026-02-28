@@ -9,7 +9,8 @@ import rentalRouter from './src/routes/Rental.routes.js'
 import messageRouter from "./src/routes/Message.routes.js";
 import reviewRouter from "./src/routes/Review.routes.js"
 import chatRouter from './src/routes/Chat.routes.js';
-import disputeRouter from './src/routes/Dispute.routes.js'
+import disputeRouter from './src/routes/Dispute.routes.js';
+import adminRouter from './src/routes/Admin.routes.js';
 
 const app = express();
 
@@ -46,6 +47,9 @@ app.use("/api/v1/chat", chatRouter);
 
 //dispute routes
 app.use("/api/v1/disputes", disputeRouter);
+
+// Admin Routes
+app.use("/api/v1/admin", adminRouter);
 
 // Global Error Handler
 
