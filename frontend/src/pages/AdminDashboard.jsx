@@ -3,12 +3,21 @@ import { getAllDisputes, processDispute } from '../api/admin';
 import { ShieldAlert, Check, X, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Ui/Button';
 import DisputeDetailsModal from '../components/DisputeDetailsModal';
+import DecisionModal from '../components/Decisionmodal'; // 🔥 Import the new modal
 
 const AdminDashboard = () => {
     const [disputes, setDisputes] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    // Modals State
     const [selectedDispute, setSelectedDispute] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    
+    const [decisionModal, setDecisionModal] = useState({
+        isOpen: false,
+        type: null, // 'Resolved' or 'Rejected'
+        disputeId: null
+    });
 
     const fetchDisputes = async () => {
         try {
@@ -25,13 +34,19 @@ const AdminDashboard = () => {
         fetchDisputes();
     }, []);
 
-    const handleDecision = async (id, status) => {
-        if(!window.confirm(`Mark as ${status}?`)) return;
+    // 1. Open the Decision Modal
+    const promptDecision = (id, type) => {
+        setDecisionModal({ isOpen: true, type, disputeId: id });
+    };
+
+    // 2. Submit the Decision with Comment
+    const handleFinalDecision = async (comment) => {
         try {
-            await processDispute(id, status, "Admin decision");
-            fetchDisputes(); 
+            await processDispute(decisionModal.disputeId, decisionModal.type, comment);
+            setDecisionModal({ isOpen: false, type: null, disputeId: null }); // Close modal
+            fetchDisputes(); // Refresh list
         } catch (error) {
-            alert("Failed");
+            alert("Failed to process dispute");
         }
     };
 
@@ -43,7 +58,7 @@ const AdminDashboard = () => {
     if (loading) return <div className="min-h-screen pt-28 flex justify-center">Loading...</div>;
 
     return (
-        <div className="min-h-screen pt-28 pb-12 px-4 bg-zinc-50 dark:bg-zinc-950">
+        <div className="min-h-screen pt-28 pb-12 px-4 bg-zinc-50 dark:bg-zinc-950 transition-colors">
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center gap-4 mb-8">
                     <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center text-white shadow-lg">
@@ -54,7 +69,7 @@ const AdminDashboard = () => {
 
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                     <table className="w-full text-left">
-                        <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                        <thead className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
                             <tr>
                                 <th className="p-4 text-xs font-bold uppercase text-zinc-500">Status</th>
                                 <th className="p-4 text-xs font-bold uppercase text-zinc-500">Issue</th>
@@ -81,10 +96,24 @@ const AdminDashboard = () => {
                                         <Button size="sm" variant="outline" onClick={() => openDetails(dispute)}>
                                             <ExternalLink className="w-4 h-4" />
                                         </Button>
+                                        
+                                        {/* 🔥 Buttons now trigger the Modal */}
                                         {dispute.status === 'Open' && (
                                             <>
-                                                <Button size="sm" className="bg-green-600 text-white" onClick={() => handleDecision(dispute._id, 'Resolved')}><Check className="w-4 h-4" /></Button>
-                                                <Button size="sm" variant="danger" onClick={() => handleDecision(dispute._id, 'Rejected')}><X className="w-4 h-4" /></Button>
+                                                <Button 
+                                                    size="sm" 
+                                                    className="bg-green-600 hover:bg-green-700 text-white border-none" 
+                                                    onClick={() => promptDecision(dispute._id, 'Resolved')}
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                </Button>
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="danger" 
+                                                    onClick={() => promptDecision(dispute._id, 'Rejected')}
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
                                             </>
                                         )}
                                     </td>
@@ -99,6 +128,14 @@ const AdminDashboard = () => {
                 isOpen={isDetailsOpen} 
                 onClose={() => setIsDetailsOpen(false)} 
                 dispute={selectedDispute}
+            />
+
+            {/* 🔥 Render the Decision Modal */}
+            <DecisionModal 
+                isOpen={decisionModal.isOpen}
+                type={decisionModal.type}
+                onClose={() => setDecisionModal({ ...decisionModal, isOpen: false })}
+                onSubmit={handleFinalDecision}
             />
         </div>
     );

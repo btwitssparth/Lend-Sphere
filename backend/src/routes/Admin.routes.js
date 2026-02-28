@@ -5,7 +5,6 @@ import { getAllDisputes, processDispute } from "../controllers/Admin.controller.
 
 const router = Router();
 
-// Apply BOTH middlewares: User must be logged in AND be an Admin
 router.use(verifyJwt, verifyAdmin);
 
 router.route("/disputes").get(getAllDisputes);

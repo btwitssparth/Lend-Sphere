@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle, Calendar, User, DollarSign, Image as ImageIcon } from 'lucide-react';
+import { X, AlertTriangle, Calendar, User, DollarSign, Image as ImageIcon, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from './Ui/Button';
 
 const DisputeDetailsModal = ({ isOpen, onClose, dispute }) => {
@@ -36,11 +36,30 @@ const DisputeDetailsModal = ({ isOpen, onClose, dispute }) => {
                     <div className={`p-4 rounded-xl border flex items-center justify-between ${
                         dispute.status === 'Open' ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300' :
                         dispute.status === 'Resolved' ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300' :
-                        'bg-zinc-50 border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300'
+                        'bg-zinc-50 border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300' // Rejected
                     }`}>
                         <span className="font-bold text-sm uppercase tracking-wider">Current Status</span>
                         <span className="font-black text-lg">{dispute.status}</span>
                     </div>
+
+                    {/* 🔥 ADMIN VERDICT SECTION (Visible only if processed) */}
+                    {dispute.adminComment && (
+                        <div className={`p-5 rounded-xl border ${
+                            dispute.status === 'Resolved' 
+                                ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+                                : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                        }`}>
+                            <h4 className={`text-sm font-bold uppercase tracking-wider mb-2 flex items-center gap-2 ${
+                                dispute.status === 'Resolved' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+                            }`}>
+                                {dispute.status === 'Resolved' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                Admin Verdict
+                            </h4>
+                            <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-transparent">
+                                "{dispute.adminComment}"
+                            </p>
+                        </div>
+                    )}
 
                     {/* Key Details Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -63,7 +82,7 @@ const DisputeDetailsModal = ({ isOpen, onClose, dispute }) => {
                             </span>
                         </div>
                         <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Rental Date</span>
+                            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Date Reported</span>
                             <span className="text-zinc-900 dark:text-zinc-100 font-bold flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-purple-500" /> 
                                 {new Date(dispute.createdAt).toLocaleDateString()}
@@ -97,7 +116,7 @@ const DisputeDetailsModal = ({ isOpen, onClose, dispute }) => {
                                             href={img} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs uppercase tracking-wider"
+                                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs uppercase tracking-wider backdrop-blur-sm"
                                         >
                                             View Full Size
                                         </a>
