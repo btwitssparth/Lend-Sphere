@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; // Added useEffect for debugging
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, AlertTriangle, Calendar, User, DollarSign, Image as ImageIcon, 
@@ -9,33 +9,44 @@ import { submitDisputeResponse } from '../api/dispute';
 
 const DisputeDetailsModal = ({ isOpen, onClose, dispute, isRenterView, isAdmin, onDecision, onResponseSuccess }) => {
     const [responseComment, setResponseComment] = useState("");
+    const [responseFiles, setResponseFiles] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // 🔥 DEBUGGING: See what data is actually arriving
     useEffect(() => {
         if (isOpen && dispute) {
             console.log("--- MODAL DEBUG ---");
             console.log("Dispute Data:", dispute);
-            console.log("Images:", dispute.proofImages);
+            console.log("Lender Images:", dispute.proofImages);
+            console.log("Renter Images:", dispute.defendantProof);
             console.log("Is Admin?", isAdmin);
+            console.log("Is Renter?", isRenterView);
             console.log("Status:", dispute.status);
-            console.log("Show Actions?", isAdmin && (dispute.status === 'Open' || dispute.status === 'Under Review'));
             console.log("-------------------");
         }
-    }, [isOpen, dispute, isAdmin]);
+    }, [isOpen, dispute, isAdmin, isRenterView]);
 
     if (!isOpen || !dispute) return null;
 
     const handleSubmitResponse = async (e) => {
         e.preventDefault();
         setLoading(true);
+        
+        const formData = new FormData();
+        formData.append('comment', responseComment);
+        
+        // Add optional proof images
+        for (let i = 0; i < responseFiles.length; i++) {
+            formData.append('proofImages', responseFiles[i]);
+        }
+        
         try {
-            await submitDisputeResponse(dispute._id, { comment: responseComment });
-            alert("Response submitted!");
-            if(onResponseSuccess) onResponseSuccess();
+            await submitDisputeResponse(dispute._id, formData);
+            alert("Response submitted successfully!");
+            if (onResponseSuccess) onResponseSuccess();
             onClose();
         } catch (error) {
-            alert("Failed to submit response");
+            console.error("Submit response error:", error);
+            alert(error.response?.data?.message || "Failed to submit response");
         } finally {
             setLoading(false);
         }
@@ -109,21 +120,30 @@ const DisputeDetailsModal = ({ isOpen, onClose, dispute, isRenterView, isAdmin, 
                             {dispute.description}
                         </p>
                         
-                        {/* 🔥 ROBUST IMAGE SECTION */}
+                        {/* 🔥 FIXED IMAGE SECTION */}
                         <div className="mt-4">
                             <span className="text-xs font-bold text-red-800 dark:text-red-300 mb-2 block flex items-center gap-1">
                                 <ImageIcon className="w-3 h-3" /> Evidence Photos
                             </span>
                             
-                            {dispute.proofImages && dispute.proofImages.length > 0 ? (
+                            {dispute.proofImages && Array.isArray(dispute.proofImages) && dispute.proofImages.length > 0 ? (
                                 <div className="flex flex-wrap gap-3">
                                     {dispute.proofImages.map((img, i) => (
-                                        <a key={i} href={img} target="_blank" rel="noreferrer" className="block relative group">
-                                            {/* Fixed Height/Width to prevent collapse */}
+                                        <a 
+                                            key={i} 
+                                            href={img} 
+                                            target="_blank" 
+                                            rel="noreferrer" 
+                                            className="block relative group"
+                                        >
                                             <img 
                                                 src={img} 
                                                 className="w-32 h-32 rounded-lg object-cover border border-red-200 dark:border-red-900/50 shadow-sm hover:scale-105 transition-transform" 
-                                                alt={`Proof ${i}`} 
+                                                alt={`Proof ${i + 1}`}
+                                                onError={(e) => {
+                                                    console.error(`Image failed to load: ${img}`);
+                                                    e.target.src = '/default-placeholder.png';
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center">
                                                 <ExternalLink className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5" />
@@ -152,32 +172,65 @@ const DisputeDetailsModal = ({ isOpen, onClose, dispute, isRenterView, isAdmin, 
                                     <p className="text-zinc-700 dark:text-zinc-300 text-sm mb-4 leading-relaxed whitespace-pre-wrap">
                                         {dispute.defendantComment}
                                     </p>
-                                    {dispute.defendantProof && dispute.defendantProof.length > 0 && (
+                                    {dispute.defendantProof && Array.isArray(dispute.defendantProof) && dispute.defendantProof.length > 0 && (
                                          <div className="flex flex-wrap gap-3 mt-4">
-                                         {dispute.defendantProof.map((img, i) => (
-                                             <a key={i} href={img} target="_blank" rel="noreferrer" className="block">
-                                                 <img src={img} className="w-32 h-32 rounded-lg object-cover border border-blue-200" alt={`Defense ${i}`} />
-                                             </a>
-                                         ))}
-                                     </div>
+                                            {dispute.defendantProof.map((img, i) => (
+                                                <a 
+                                                    key={i} 
+                                                    href={img} 
+                                                    target="_blank" 
+                                                    rel="noreferrer" 
+                                                    className="block"
+                                                >
+                                                    <img 
+                                                        src={img} 
+                                                        className="w-32 h-32 rounded-lg object-cover border border-blue-200" 
+                                                        alt={`Defense ${i + 1}`}
+                                                        onError={(e) => {
+                                                            console.error(`Defense image failed: ${img}`);
+                                                            e.target.src = '/default-placeholder.png';
+                                                        }}
+                                                    />
+                                                </a>
+                                            ))}
+                                        </div>
                                     )}
                                 </>
                             ) : (
                                 isRenterView && dispute.status === 'Open' && (
-                                    <div>
+                                    <form onSubmit={handleSubmitResponse}>
                                         <textarea 
+                                            required
                                             className="w-full p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-zinc-900 mb-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                             rows="4"
                                             placeholder="Explain your side of the story..."
                                             value={responseComment}
                                             onChange={e => setResponseComment(e.target.value)}
                                         />
+                                        
+                                        <div className="mb-3">
+                                            <label className="text-xs font-bold text-blue-800 dark:text-blue-300 mb-1 block">
+                                                Optional: Upload Counter Evidence
+                                            </label>
+                                            <input 
+                                                type="file"
+                                                multiple
+                                                accept="image/*"
+                                                onChange={(e) => setResponseFiles(Array.from(e.target.files))}
+                                                className="text-sm"
+                                            />
+                                        </div>
+                                        
                                         <div className="flex justify-end">
-                                            <Button onClick={handleSubmitResponse} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
+                                            <Button 
+                                                type="submit" 
+                                                disabled={loading} 
+                                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                            >
                                                 {loading ? "Submitting..." : "Submit Defense Statement"}
                                             </Button>
                                         </div>
-                                    </div>
+                                    </form>
                                 )
                             )}
                         </div>
@@ -209,7 +262,6 @@ const DisputeDetailsModal = ({ isOpen, onClose, dispute, isRenterView, isAdmin, 
                 <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex justify-end gap-3 shrink-0">
                     <Button variant="outline" onClick={onClose}>Close</Button>
                     
-                    {/* 🔥 FORCE SHOW ACTIONS FOR DEBUGGING (Ideally condition this on isAdmin) */}
                     {isAdmin && (dispute.status === 'Open' || dispute.status === 'Under Review') && (
                         <>
                             <Button 

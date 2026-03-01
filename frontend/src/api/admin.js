@@ -4,6 +4,7 @@ export const getAllDisputes = async () => {
     return api.get('/admin/disputes');
 };
 
+// 🔥 FIXED: Changed from /disputes/ to /dispute/ to match backend route
 export const processDispute = async (disputeId, status, adminComment) => {
     return api.post(`/admin/dispute/${disputeId}/process`, { status, adminComment });
 };
