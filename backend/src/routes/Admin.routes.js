@@ -7,7 +7,11 @@ const router = Router();
 
 router.use(verifyJwt, verifyAdmin);
 
+// Get ALL disputes (Plural makes sense here)
 router.route("/disputes").get(getAllDisputes);
-router.route("/dispute/:disputeId/process").post(processDispute);
+
+// Process ONE dispute (Change this to SINGULAR to match frontend)
+router.route("/dispute/:disputeId/process").post(processDispute); 
+// ^^^ CHANGED FROM "/disputes/..." TO "/dispute/..."
 
 export default router;
