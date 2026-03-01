@@ -28,7 +28,8 @@ const processDispute = asyncHandler(async (req, res) => {
     if (!dispute) throw new ApiError(404, "Dispute not found");
 
     // Prevent double processing
-    if (dispute.status !== 'Open') {
+    // Allow processing when dispute is 'Open' or 'Under Review'
+    if (!['Open', 'Under Review'].includes(dispute.status)) {
         throw new ApiError(400, "This dispute has already been processed.");
     }
 
