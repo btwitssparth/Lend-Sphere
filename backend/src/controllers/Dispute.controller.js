@@ -68,4 +68,54 @@ const getDisputeByRental = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, dispute || null, "Fetched dispute status"));
 });
 
-export { createDispute, getMyDisputes, getDisputeByRental };
+const getDisputesAgainstMe = asyncHandler(async (req, res) => {
+    const disputes = await Dispute.find({ defendant: req.user._id })
+        .populate("rental")
+        .populate("raiser", "name email")
+        .sort("-createdAt");
+    
+    return res.status(200).json(new ApiResponse(200, disputes, "Disputes against me fetched"));
+});
+
+// 🔥 NEW: Submit Counter-Response (The Defense)
+const submitResponse = asyncHandler(async (req, res) => {
+    const { disputeId } = req.params;
+    const { comment } = req.body;
+
+    const dispute = await Dispute.findById(disputeId);
+    if (!dispute) throw new ApiError(404, "Dispute not found");
+
+    // Check if user is the defendant
+    if (dispute.defendant.toString() !== req.user._id.toString()) {
+        throw new ApiError(403, "You are not the defendant in this case");
+    }
+
+    if (dispute.status !== 'Open') {
+        throw new ApiError(400, "Cannot respond to a closed dispute");
+    }
+
+    if (dispute.isResponseSubmitted) {
+        throw new ApiError(400, "You have already submitted a response");
+    }
+
+    // Handle Optional Proof Images (if any)
+    let proofUrls = [];
+    if (req.files && req.files.length > 0) {
+        const uploadPromises = req.files.map(file => uploadOnCloudinary(file.path));
+        const uploadedImages = await Promise.all(uploadPromises);
+        proofUrls = uploadedImages.filter(img => img !== null).map(img => img.url);
+    }
+
+    dispute.defendantComment = comment;
+    dispute.defendantProof = proofUrls;
+    dispute.isResponseSubmitted = true;
+    
+    // Optionally change status to "Under Review" to alert Admin
+    dispute.status = "Under Review";
+
+    await dispute.save();
+
+    return res.status(200).json(new ApiResponse(200, dispute, "Response submitted successfully"));
+});
+
+export { createDispute, getMyDisputes, getDisputeByRental, getDisputesAgainstMe, submitResponse };

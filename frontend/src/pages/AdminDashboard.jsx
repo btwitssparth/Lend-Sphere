@@ -3,7 +3,7 @@ import { getAllDisputes, processDispute } from '../api/admin';
 import { ShieldAlert, Check, X, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Ui/Button';
 import DisputeDetailsModal from '../components/DisputeDetailsModal';
-import DecisionModal from '../components/Decisionmodal'; // 🔥 Import the new modal
+import DecisionModal from '../components/DecisionModal';
 
 const AdminDashboard = () => {
     const [disputes, setDisputes] = useState([]);
@@ -34,7 +34,7 @@ const AdminDashboard = () => {
         fetchDisputes();
     }, []);
 
-    // 1. Open the Decision Modal
+    // 1. Open the Decision Modal (Triggered from Table OR Details Modal)
     const promptDecision = (id, type) => {
         setDecisionModal({ isOpen: true, type, disputeId: id });
     };
@@ -43,7 +43,8 @@ const AdminDashboard = () => {
     const handleFinalDecision = async (comment) => {
         try {
             await processDispute(decisionModal.disputeId, decisionModal.type, comment);
-            setDecisionModal({ isOpen: false, type: null, disputeId: null }); // Close modal
+            setDecisionModal({ isOpen: false, type: null, disputeId: null }); // Close decision modal
+            setIsDetailsOpen(false); // Close details modal too
             fetchDisputes(); // Refresh list
         } catch (error) {
             alert("Failed to process dispute");
@@ -84,6 +85,7 @@ const AdminDashboard = () => {
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${
                                             dispute.status === 'Open' ? 'bg-blue-50 text-blue-600 border-blue-200' :
                                             dispute.status === 'Resolved' ? 'bg-green-50 text-green-600 border-green-200' :
+                                            dispute.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200' :
                                             'bg-zinc-100 text-zinc-500 border-zinc-200'
                                         }`}>{dispute.status}</span>
                                     </td>
@@ -97,8 +99,8 @@ const AdminDashboard = () => {
                                             <ExternalLink className="w-4 h-4" />
                                         </Button>
                                         
-                                        {/* 🔥 Buttons now trigger the Modal */}
-                                        {dispute.status === 'Open' && (
+                                        {/* Table Actions */}
+                                        {(dispute.status === 'Open' || dispute.status === 'Under Review') && (
                                             <>
                                                 <Button 
                                                     size="sm" 
@@ -124,13 +126,15 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
+            {/* 🔥 Pass isAdmin={true} and the promptDecision handler */}
             <DisputeDetailsModal 
                 isOpen={isDetailsOpen} 
                 onClose={() => setIsDetailsOpen(false)} 
                 dispute={selectedDispute}
+                isAdmin={true} 
+                onDecision={(type) => promptDecision(selectedDispute._id, type)}
             />
 
-            {/* 🔥 Render the Decision Modal */}
             <DecisionModal 
                 isOpen={decisionModal.isOpen}
                 type={decisionModal.type}

@@ -3,7 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 import { useTheme } from '../Context/ThemeContext';
 import { getLenderRequests, getMyRentals } from '../api/rentals'; 
-import { Moon, Sun, Menu, X, LogOut, LayoutDashboard, Package, PlusCircle, Bell, Circle, ShieldAlert } from 'lucide-react'; // 🔥 Added ShieldAlert
+import { getDisputesAgainstMe } from '../api/dispute'; // 🔥 Import Dispute API
+import { 
+    Moon, Sun, Menu, X, LogOut, LayoutDashboard, Package, 
+    PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Gavel 
+} from 'lucide-react'; 
 import { Button } from './Ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -31,16 +35,32 @@ const Navbar = () => {
 
         const fetchNotifications = async () => {
             try {
-                const [lenderRes, renterRes] = await Promise.all([
+                // 🔥 Fetch Disputes alongside Rentals and Requests
+                const [lenderRes, renterRes, disputeRes] = await Promise.all([
                     getLenderRequests().catch(() => ({ data: { data: [] } })),
-                    getMyRentals().catch(() => ({ data: { data: [] } }))
+                    getMyRentals().catch(() => ({ data: { data: [] } })),
+                    getDisputesAgainstMe().catch(() => ({ data: { data: [] } })) // Fetch Disputes
                 ]);
 
                 const pendingRequests = lenderRes.data.data.filter(r => r.status === 'Pending');
                 const approvedRentals = renterRes.data.data.filter(r => r.status === 'Approved');
+                // Check for Open disputes against the user
+                const activeDisputes = disputeRes.data.data.filter(d => d.status === 'Open' || d.status === 'Under Review');
 
                 let newNotifs = [];
 
+                // 1. Critical: Disputes
+                if (activeDisputes.length > 0) {
+                    newNotifs.push({
+                        id: 'dispute-active',
+                        title: 'Action Required',
+                        desc: `You have ${activeDisputes.length} active dispute(s) filed against you.`,
+                        link: '/disputes',
+                        icon: <AlertTriangle className="w-4 h-4 text-red-500" />
+                    });
+                }
+
+                // 2. Lender Requests
                 if (pendingRequests.length > 0) {
                     newNotifs.push({
                         id: 'lender-pending',
@@ -51,6 +71,7 @@ const Navbar = () => {
                     });
                 }
 
+                // 3. Approved Rentals
                 if (approvedRentals.length > 0) {
                     newNotifs.push({
                         id: 'renter-approved',
@@ -103,7 +124,7 @@ const Navbar = () => {
                         {user ? (
                             <div className="flex items-center gap-4">
                                 
-                                {/* 🔥 ADMIN BUTTON (Desktop) */}
+                                {/* ADMIN BUTTON (Desktop) */}
                                 {user.roles?.admin === true && (
                                     <Link to="/admin">
                                         <button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-red-600/20">
@@ -212,6 +233,14 @@ const Navbar = () => {
                                                     <Package className="w-4 h-4 mr-3" /> My Rentals
                                                 </Link>
 
+                                                {/* 🔥 NEW: Resolution Center Link */}
+                                                <Link to="/disputes" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                                    <Gavel className="w-4 h-4 mr-3" /> Resolution Center
+                                                    {notifications.some(n => n.id === 'dispute-active') && (
+                                                        <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                                    )}
+                                                </Link>
+
                                                 <div className="h-px bg-slate-100 dark:bg-slate-700 my-2"></div>
                                                 
                                                 <button onClick={handleLogout} className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
@@ -278,7 +307,7 @@ const Navbar = () => {
                                         </div>
                                     </div>
                                     
-                                    {/* 🔥 ADMIN BUTTON (Mobile) */}
+                                    {/* ADMIN BUTTON (Mobile) */}
                                     {user.roles?.admin === true && (
                                         <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-red-600 dark:text-red-400 font-bold rounded-xl bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
                                             <ShieldAlert className="w-5 h-5 mr-3" /> Admin Console
@@ -295,6 +324,12 @@ const Navbar = () => {
                                     <Link to="/my-rentals" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         <Package className="w-5 h-5 mr-3 text-blue-500" /> My Rentals
                                         {notifications.some(n => n.id === 'renter-approved') && <Circle className="w-2 h-2 ml-auto fill-red-500 text-red-500 animate-pulse" />}
+                                    </Link>
+
+                                    {/* 🔥 NEW: Resolution Center (Mobile) */}
+                                    <Link to="/disputes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <Gavel className="w-5 h-5 mr-3 text-blue-500" /> Resolution Center
+                                        {notifications.some(n => n.id === 'dispute-active') && <Circle className="w-2 h-2 ml-auto fill-red-500 text-red-500 animate-pulse" />}
                                     </Link>
                                     
                                     <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="w-full flex items-center p-3 text-red-600 dark:text-red-400 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 mt-4 transition-colors">

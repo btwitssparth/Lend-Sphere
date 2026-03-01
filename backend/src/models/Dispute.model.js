@@ -27,7 +27,7 @@ const disputeSchema = new Schema(
             required: true
         },
         proofImages: [{
-            type: String, // Cloudinary URLs
+            type: String, 
             required: true
         }],
         claimAmount: {
@@ -40,6 +40,20 @@ const disputeSchema = new Schema(
             enum: ["Open", "Under Review", "Resolved", "Rejected"],
             default: "Open"
         },
+        
+        // 🔥 NEW: DEFENDANT'S RESPONSE (The Appeal)
+        defendantComment: {
+            type: String,
+            default: ""
+        },
+        defendantProof: [{
+            type: String // Optional URLs for their proof
+        }],
+        isResponseSubmitted: {
+            type: Boolean,
+            default: false
+        },
+
         adminComment: {
             type: String
         }
