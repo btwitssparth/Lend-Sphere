@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 import { useTheme } from '../Context/ThemeContext';
 import { getLenderRequests, getMyRentals } from '../api/rentals'; 
-import { getDisputesAgainstMe } from '../api/dispute'; // 🔥 Import Dispute API
+import { getDisputesAgainstMe } from '../api/dispute'; 
 import { 
     Moon, Sun, Menu, X, LogOut, LayoutDashboard, Package, 
-    PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Gavel 
-} from 'lucide-react'; 
+    PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Gavel, Heart 
+} from 'lucide-react'; // 🔥 Added Heart icon
 import { Button } from './Ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,21 +35,19 @@ const Navbar = () => {
 
         const fetchNotifications = async () => {
             try {
-                // 🔥 Fetch Disputes alongside Rentals and Requests
+                // Fetch Disputes alongside Rentals and Requests
                 const [lenderRes, renterRes, disputeRes] = await Promise.all([
                     getLenderRequests().catch(() => ({ data: { data: [] } })),
                     getMyRentals().catch(() => ({ data: { data: [] } })),
-                    getDisputesAgainstMe().catch(() => ({ data: { data: [] } })) // Fetch Disputes
+                    getDisputesAgainstMe().catch(() => ({ data: { data: [] } }))
                 ]);
 
                 const pendingRequests = lenderRes.data.data.filter(r => r.status === 'Pending');
                 const approvedRentals = renterRes.data.data.filter(r => r.status === 'Approved');
-                // Check for Open disputes against the user
                 const activeDisputes = disputeRes.data.data.filter(d => d.status === 'Open' || d.status === 'Under Review');
 
                 let newNotifs = [];
 
-                // 1. Critical: Disputes
                 if (activeDisputes.length > 0) {
                     newNotifs.push({
                         id: 'dispute-active',
@@ -60,7 +58,6 @@ const Navbar = () => {
                     });
                 }
 
-                // 2. Lender Requests
                 if (pendingRequests.length > 0) {
                     newNotifs.push({
                         id: 'lender-pending',
@@ -71,7 +68,6 @@ const Navbar = () => {
                     });
                 }
 
-                // 3. Approved Rentals
                 if (approvedRentals.length > 0) {
                     newNotifs.push({
                         id: 'renter-approved',
@@ -233,7 +229,11 @@ const Navbar = () => {
                                                     <Package className="w-4 h-4 mr-3" /> My Rentals
                                                 </Link>
 
-                                                {/* 🔥 NEW: Resolution Center Link */}
+                                                {/* 🔥 NEW: Wishlist Link */}
+                                                <Link to="/wishlist" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                                    <Heart className="w-4 h-4 mr-3" /> My Wishlist
+                                                </Link>
+
                                                 <Link to="/disputes" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                                                     <Gavel className="w-4 h-4 mr-3" /> Resolution Center
                                                     {notifications.some(n => n.id === 'dispute-active') && (
@@ -326,7 +326,11 @@ const Navbar = () => {
                                         {notifications.some(n => n.id === 'renter-approved') && <Circle className="w-2 h-2 ml-auto fill-red-500 text-red-500 animate-pulse" />}
                                     </Link>
 
-                                    {/* 🔥 NEW: Resolution Center (Mobile) */}
+                                    {/* 🔥 NEW: Wishlist (Mobile) */}
+                                    <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <Heart className="w-5 h-5 mr-3 text-blue-500" /> My Wishlist
+                                    </Link>
+
                                     <Link to="/disputes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         <Gavel className="w-5 h-5 mr-3 text-blue-500" /> Resolution Center
                                         {notifications.some(n => n.id === 'dispute-active') && <Circle className="w-2 h-2 ml-auto fill-red-500 text-red-500 animate-pulse" />}

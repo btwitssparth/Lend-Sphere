@@ -3,12 +3,15 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProductById, deleteProduct } from '../api/products';
 import { rentProduct, getUnavailableDates } from '../api/rentals';
 import { getProductReviews } from '../api/reviews';
+import { toggleWishlist } from '../api/users'; // 🔥 Import Wishlist API
 import { useAuth } from '../Context/AuthContext';
 import { Button } from '../components/Ui/Button';
-import { MapPin, User, ShieldCheck, Tag, ArrowLeft, Edit, Trash2, Calendar, AlertCircle, Star } from 'lucide-react';
+import { 
+    MapPin, User, ShieldCheck, Tag, ArrowLeft, Edit, Trash2, 
+    Calendar, AlertCircle, Star, Heart 
+} from 'lucide-react'; // 🔥 Import Heart Icon
 import { motion } from 'framer-motion';
 
-// 🔥 1. Import DatePicker and its CSS
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -25,9 +28,12 @@ const ProductDetails = () => {
     const [reviews, setReviews] = useState([]);
     const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
 
+    // 🔥 Wishlist State
+    const [isWishlisted, setIsWishlisted] = useState(false);
+
     // Booking State
-    const [startDate, setStartDate] = useState(null); // 🔥 Changed to null for DatePicker
-    const [endDate, setEndDate] = useState(null);     // 🔥 Changed to null for DatePicker
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
     const [totalPrice, setTotalPrice] = useState(0);
     const [bookingLoading, setBookingLoading] = useState(false);
     const [bookingError, setBookingError] = useState('');
@@ -42,9 +48,15 @@ const ProductDetails = () => {
                     getProductReviews(id).catch(() => ({ data: { data: { reviews: [], averageRating: 0, totalReviews: 0 } } }))
                 ]);
                 
-                setProduct(productRes.data.data);
+                const productData = productRes.data.data;
+                setProduct(productData);
                 
-                // 🔥 2. Format backend dates so the Calendar understands them
+                // 🔥 Check if product is already in user's wishlist
+                if (user && user.wishlist) {
+                    setIsWishlisted(user.wishlist.includes(productData._id));
+                }
+
+                // Format dates for Calendar
                 const formattedDates = datesRes.data.data.map(booking => ({
                     start: new Date(booking.startDate),
                     end: new Date(booking.endDate)
@@ -66,7 +78,7 @@ const ProductDetails = () => {
             }
         };
         fetchDetails();
-    }, [id, navigate]);
+    }, [id, navigate, user]); // Added user to dependency to re-check on login
 
     // Real-time Total Price Calculation
     useEffect(() => {
@@ -79,7 +91,6 @@ const ProductDetails = () => {
                 return;
             }
 
-            // The calendar disables clicked dates, but we still double check if they span ACROSS a disabled date
             const hasOverlap = unavailableDates.some(booking => {
                 return (
                     (startDate <= booking.start && endDate >= booking.start) || 
@@ -102,6 +113,24 @@ const ProductDetails = () => {
             setTotalPrice(0);
         }
     }, [startDate, endDate, product, unavailableDates]);
+
+    // 🔥 Handle Wishlist Toggle
+    const handleWishlist = async () => {
+        if (!user) {
+            alert("Please login to save items.");
+            return navigate('/login');
+        }
+        try {
+            // Optimistic UI update (change color immediately)
+            const newStatus = !isWishlisted;
+            setIsWishlisted(newStatus);
+            
+            await toggleWishlist(product._id);
+        } catch (error) {
+            console.error("Wishlist action failed", error);
+            setIsWishlisted(!isWishlisted); // Revert on error
+        }
+    };
 
     const handleDelete = async () => {
         if (window.confirm("Are you sure you want to delete this listing? This action cannot be undone.")) {
@@ -139,7 +168,7 @@ const ProductDetails = () => {
         try {
             await rentProduct({ 
                 productId: product._id, 
-                startDate: startDate.toISOString(), // Convert Date object back to string for backend
+                startDate: startDate.toISOString(), 
                 endDate: endDate.toISOString(), 
                 renterAddress 
             });
@@ -165,7 +194,6 @@ const ProductDetails = () => {
         ? product.productImages 
         : [product.productImage || '/default-placeholder.png'];
 
-    // 🔥 Custom Input Field to keep our beautiful UI styling with the DatePicker
     const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
         <div className="relative cursor-pointer" onClick={onClick}>
             <input 
@@ -190,10 +218,22 @@ const ProductDetails = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-2 space-y-10">
                         
-                        {/* Flat Image Gallery */}
+                        {/* Image Gallery */}
                         <div className="space-y-4">
-                            <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 shadow-sm">
+                            <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 shadow-sm relative group">
                                 <img src={displayImages[activeImageIndex]} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-105" />
+                                
+                                {/* 🔥 Heart Button (Over Image for cool effect) */}
+                                <button 
+                                    onClick={handleWishlist}
+                                    className={`absolute top-4 right-4 p-3 rounded-full shadow-lg backdrop-blur-md transition-all duration-300 ${
+                                        isWishlisted 
+                                        ? 'bg-white/90 text-red-500 fill-red-500 scale-110' 
+                                        : 'bg-black/20 text-white hover:bg-white hover:text-red-500'
+                                    }`}
+                                >
+                                    <Heart className={`w-6 h-6 ${isWishlisted ? 'fill-red-500' : ''}`} />
+                                </button>
                             </div>
                             
                             {displayImages.length > 1 && (
@@ -245,7 +285,7 @@ const ProductDetails = () => {
 
                             {/* Flat Tags/Meta */}
                             <div className="flex flex-wrap gap-4 py-6 border-t border-b border-zinc-100 dark:border-zinc-800 mb-8 transition-colors">
-                                <Link to={`/profile/${product.owner?._id}`} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 min-w-[200px] transition-colors cursor-pointer group">
+                                <Link to={`/u/${product.owner?._id}`} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 min-w-[200px] transition-colors cursor-pointer group">
                                     <div className="w-10 h-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-sm group-hover:scale-105 transition-transform">
                                         <User className="w-5 h-5" />
                                     </div>
@@ -329,8 +369,6 @@ const ProductDetails = () => {
                             {!isOwner ? (
                                 <form onSubmit={handleRent} className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
-                                        
-                                        {/* 🔥 Interactive Start Date Calendar */}
                                         <div className="space-y-1.5 flex flex-col">
                                             <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Start Date</label>
                                             <DatePicker
@@ -347,7 +385,6 @@ const ProductDetails = () => {
                                             />
                                         </div>
 
-                                        {/* 🔥 Interactive End Date Calendar */}
                                         <div className="space-y-1.5 flex flex-col">
                                             <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">End Date</label>
                                             <DatePicker
@@ -365,7 +402,6 @@ const ProductDetails = () => {
                                         </div>
                                     </div>
 
-                                    {/* ADDRESS INPUT */}
                                     <div className="space-y-1.5 mt-2">
                                         <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Usage Address / Your Location</label>
                                         <div className="relative">
@@ -378,7 +414,6 @@ const ProductDetails = () => {
                                         </div>
                                     </div>
 
-                                    {/* Error or Price Display */}
                                     {bookingError ? (
                                         <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-lg flex items-start gap-2 text-sm text-red-600 dark:text-red-400 font-medium">
                                             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />

@@ -16,6 +16,7 @@ import UploadId from './pages/UploadId';
 import PublicProfile from './pages/PublicProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import RenterDisputes from './pages/RenterDisputes';
+import Wishlist from "./pages/Wishlist"
 
 // REMOVED LoginForm/RegisterForm imports if they aren't used directly here
 
@@ -54,6 +55,9 @@ function App() {
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/disputes" element={<RenterDisputes />} />
+
+          {/* Wishlist Route */}
+          <Route path="/wishlist" element={<Wishlist />} />
         </Routes>
       </main>
 

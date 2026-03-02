@@ -249,4 +249,36 @@ const getUserProfile = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, loginUser, googleLogin, logoutUser, getCurrentUser, switchUserRole, refreshAccessToken, updateUserProfile, changePassword,uploadIdentityProof, getUserProfile};
+
+// toggle wishlist item
+
+const toggleWishList= asyncHandler(async(req,res)=>{
+    const {productId} = req.body;
+    const user = await User.findById(req.user._id);
+    if(!user) throw new ApiError(404, "User not found");
+
+    const isAdded = user.wishlist.includes(productId);
+    if(isAdded){
+        user.wishlist = user.wishlist.filter(id=> id.toString()!==productId);
+
+    }
+    else{
+        user.wishlist.push(productId);
+    }
+
+    await User.save({validateBeforeSave: false});
+    new ApiResponse(200, { wishlist: user.wishlist, isAdded: !isAdded }, 
+        isAdded ? "Removed from wishlist" : "Added to wishlist")
+    
+    
+})
+
+const getWishlist = asyncHandler(async(req,res)=>{
+    const user = await User.findById(req.user._id).populate("wishlist");
+    if(!user) throw new ApiError(404, "User not found");
+
+    return res.status(200).json(
+        new ApiResponse(200, user.wishlist, "Wishlist fetched successfully")
+    );
+})
+export { registerUser, loginUser, googleLogin, logoutUser, getCurrentUser, switchUserRole, refreshAccessToken, updateUserProfile, changePassword,uploadIdentityProof, getUserProfile,toggleWishList,getWishlist };

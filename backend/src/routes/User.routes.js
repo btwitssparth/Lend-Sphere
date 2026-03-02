@@ -7,7 +7,10 @@ import {
     switchUserRole,
     getCurrentUser, 
     uploadIdentityProof,
-    getUserProfile
+    getUserProfile,
+    toggleWishList,
+    getWishlist
+
     
 } from "../controllers/User.controller.js"
 
@@ -36,5 +39,10 @@ router.route("/upload-id").post(
     upload.single("identityProof"), // 'upload' is now defined
     uploadIdentityProof
 );
+
+//Wishlist Routes
+router.route("/wishlist/toggle").post(verifyJwt,toggleWishList);
+router.route("/wishlist").get(verifyJwt,getWishlist);
+
 
 export default router;
