@@ -7,7 +7,7 @@ import { getDisputesAgainstMe } from '../api/dispute';
 import { 
     Moon, Sun, Menu, X, LogOut, LayoutDashboard, Package, 
     PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Gavel, Heart 
-} from 'lucide-react'; // 🔥 Added Heart icon
+} from 'lucide-react';
 import { Button } from './Ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,7 +35,6 @@ const Navbar = () => {
 
         const fetchNotifications = async () => {
             try {
-                // Fetch Disputes alongside Rentals and Requests
                 const [lenderRes, renterRes, disputeRes] = await Promise.all([
                     getLenderRequests().catch(() => ({ data: { data: [] } })),
                     getMyRentals().catch(() => ({ data: { data: [] } })),
@@ -97,13 +96,26 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
                     
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20">
-                            L
-                        </div>
+                    {/* 🔥 LOGO: Removed outer circle outline and added outline-none to prevent focus rings */}
+                    <Link to="/" className="flex items-center gap-3 outline-none focus:outline-none">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="shrink-0 outline-none">
+                            <defs>
+                                <linearGradient id="brandGradientNavbar" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                                    <stop stopColor="#0ea5e9" />
+                                    <stop offset="1" stopColor="#0284c7" />
+                                </linearGradient>
+                            </defs>
+                            {/* Inner Logo Paths Only */}
+                            <path d="M20 5C11.7157 5 5 11.7157 5 20" stroke="url(#brandGradientNavbar)" strokeWidth="3" strokeLinecap="round" />
+                            <path d="M35 20C35 28.2843 28.2843 35 20 35" stroke="url(#brandGradientNavbar)" strokeWidth="3" strokeLinecap="round" />
+                            <circle cx="20" cy="20" r="6" fill="url(#brandGradientNavbar)" />
+                            <circle cx="20" cy="5" r="2.5" fill="#0ea5e9" />
+                            <circle cx="35" cy="20" r="2.5" fill="#0284c7" />
+                            <circle cx="20" cy="35" r="2.5" fill="#0ea5e9" />
+                            <circle cx="5" cy="20" r="2.5" fill="#0284c7" />
+                        </svg>
                         <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight transition-colors">
-                            Lend<span className="text-blue-600">Sphere</span>
+                            LendSphere
                         </span>
                     </Link>
 
@@ -112,7 +124,7 @@ const Navbar = () => {
                         
                         <button 
                             onClick={toggleTheme} 
-                            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors outline-none focus:outline-none"
                         >
                             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                         </button>
@@ -122,15 +134,15 @@ const Navbar = () => {
                                 
                                 {/* ADMIN BUTTON (Desktop) */}
                                 {user.roles?.admin === true && (
-                                    <Link to="/admin">
-                                        <button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-red-600/20">
+                                    <Link to="/admin" className="outline-none focus:outline-none">
+                                        <button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition-all shadow-md shadow-red-600/20 outline-none focus:outline-none">
                                             <ShieldAlert className="w-4 h-4" />
                                             Admin
                                         </button>
                                     </Link>
                                 )}
 
-                                <Link to="/add-product">
+                                <Link to="/add-product" className="outline-none focus:outline-none">
                                     <Button variant="outline" className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors">
                                         <PlusCircle className="w-4 h-4 mr-2" /> List Item
                                     </Button>
@@ -140,7 +152,7 @@ const Navbar = () => {
                                 <div className="relative">
                                     <button 
                                         onClick={toggleNotif}
-                                        className={`relative p-2 rounded-full transition-colors ${isNotifOpen ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800'} text-slate-600 dark:text-slate-300`}
+                                        className={`relative p-2 rounded-full transition-colors outline-none focus:outline-none ${isNotifOpen ? 'bg-slate-100 dark:bg-slate-800' : 'hover:bg-slate-100 dark:hover:bg-slate-800'} text-slate-600 dark:text-slate-300`}
                                     >
                                         <Bell className="w-5 h-5" />
                                         {notifications.length > 0 && (
@@ -198,7 +210,7 @@ const Navbar = () => {
                                 <div className="relative">
                                     <button 
                                         onClick={toggleProfile}
-                                        className="flex items-center gap-2 p-1.5 pr-4 rounded-full border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors bg-white dark:bg-slate-800"
+                                        className="flex items-center gap-2 p-1.5 pr-4 rounded-full border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors bg-white dark:bg-slate-800 outline-none focus:outline-none"
                                     >
                                         <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
                                             {user.name?.charAt(0).toUpperCase() || 'U'}
@@ -229,7 +241,6 @@ const Navbar = () => {
                                                     <Package className="w-4 h-4 mr-3" /> My Rentals
                                                 </Link>
 
-                                                {/* 🔥 NEW: Wishlist Link */}
                                                 <Link to="/wishlist" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-red-600 dark:hover:text-red-400 transition-colors">
                                                     <Heart className="w-4 h-4 mr-3" /> My Wishlist
                                                 </Link>
@@ -243,7 +254,7 @@ const Navbar = () => {
 
                                                 <div className="h-px bg-slate-100 dark:bg-slate-700 my-2"></div>
                                                 
-                                                <button onClick={handleLogout} className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                                <button onClick={handleLogout} className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors outline-none">
                                                     <LogOut className="w-4 h-4 mr-3" /> Logout
                                                 </button>
                                             </motion.div>
@@ -253,11 +264,8 @@ const Navbar = () => {
                             </div>
                         ) : (
                             <div className="flex items-center gap-4">
-                                <Link to="/login">
-                                    <Button variant="ghost" className="dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800">Log In</Button>
-                                </Link>
-                                <Link to="/register">
-                                    <Button className="shadow-lg shadow-blue-600/20">Sign Up</Button>
+                                <Link to="/login" className="outline-none focus:outline-none">
+                                    <Button className="shadow-lg shadow-blue-600/20 px-6">Log In</Button>
                                 </Link>
                             </div>
                         )}
@@ -266,7 +274,7 @@ const Navbar = () => {
                     {/* Mobile Menu Button & Dark Mode */}
                     <div className="md:hidden flex items-center gap-2">
                         {user && (
-                            <Link to="/lender-dashboard" className="relative p-2 text-slate-600 dark:text-slate-300">
+                            <Link to="/lender-dashboard" className="relative p-2 text-slate-600 dark:text-slate-300 outline-none focus:outline-none">
                                 <Bell className="w-5 h-5" />
                                 {notifications.length > 0 && (
                                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
@@ -274,11 +282,11 @@ const Navbar = () => {
                             </Link>
                         )}
 
-                        <button onClick={toggleTheme} className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <button onClick={toggleTheme} className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors outline-none focus:outline-none">
                             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                         </button>
 
-                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-full">
+                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-full outline-none focus:outline-none">
                             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
                     </div>
@@ -326,7 +334,6 @@ const Navbar = () => {
                                         {notifications.some(n => n.id === 'renter-approved') && <Circle className="w-2 h-2 ml-auto fill-red-500 text-red-500 animate-pulse" />}
                                     </Link>
 
-                                    {/* 🔥 NEW: Wishlist (Mobile) */}
                                     <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         <Heart className="w-5 h-5 mr-3 text-blue-500" /> My Wishlist
                                     </Link>
@@ -336,17 +343,14 @@ const Navbar = () => {
                                         {notifications.some(n => n.id === 'dispute-active') && <Circle className="w-2 h-2 ml-auto fill-red-500 text-red-500 animate-pulse" />}
                                     </Link>
                                     
-                                    <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="w-full flex items-center p-3 text-red-600 dark:text-red-400 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 mt-4 transition-colors">
+                                    <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="w-full flex items-center p-3 text-red-600 dark:text-red-400 font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 mt-4 transition-colors outline-none">
                                         <LogOut className="w-5 h-5 mr-3" /> Log Out
                                     </button>
                                 </>
                             ) : (
                                 <div className="flex flex-col gap-3 pt-2">
-                                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <Button variant="outline" className="w-full py-3 dark:border-slate-700 dark:text-slate-200 transition-colors">Log In</Button>
-                                    </Link>
-                                    <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <Button className="w-full py-3 shadow-lg shadow-blue-600/20">Sign Up</Button>
+                                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="outline-none focus:outline-none">
+                                        <Button className="w-full py-3 shadow-lg shadow-blue-600/20">Log In</Button>
                                     </Link>
                                 </div>
                             )}

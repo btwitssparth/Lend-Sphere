@@ -3,13 +3,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProductById, deleteProduct } from '../api/products';
 import { rentProduct, getUnavailableDates } from '../api/rentals';
 import { getProductReviews } from '../api/reviews';
-import { toggleWishlist } from '../api/users'; // 🔥 Import Wishlist API
+import { toggleWishlist, getWishlist } from '../api/users'; // 🔥 Import getWishlist
 import { useAuth } from '../Context/AuthContext';
 import { Button } from '../components/Ui/Button';
 import { 
     MapPin, User, ShieldCheck, Tag, ArrowLeft, Edit, Trash2, 
     Calendar, AlertCircle, Star, Heart 
-} from 'lucide-react'; // 🔥 Import Heart Icon
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import DatePicker from 'react-datepicker';
@@ -28,7 +28,6 @@ const ProductDetails = () => {
     const [reviews, setReviews] = useState([]);
     const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
 
-    // 🔥 Wishlist State
     const [isWishlisted, setIsWishlisted] = useState(false);
 
     // Booking State
@@ -42,6 +41,7 @@ const ProductDetails = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
+                // 1. Fetch Product, Dates, and Reviews in parallel
                 const [productRes, datesRes, reviewsRes] = await Promise.all([
                     getProductById(id),
                     getUnavailableDates(id),
@@ -50,13 +50,22 @@ const ProductDetails = () => {
                 
                 const productData = productRes.data.data;
                 setProduct(productData);
-                
-                // 🔥 Check if product is already in user's wishlist
-                if (user && user.wishlist) {
-                    setIsWishlisted(user.wishlist.includes(productData._id));
+
+                // 2. 🔥 FETCH FRESH WISHLIST STATUS (Fixes the White Heart Issue)
+                if (user) {
+                    try {
+                        const wishlistRes = await getWishlist();
+                        const myWishlist = wishlistRes.data.data; // This is an array of populated product objects
+                        
+                        // Check if current product ID exists in the fetched wishlist
+                        const exists = myWishlist.some(item => item._id === productData._id);
+                        setIsWishlisted(exists);
+                    } catch (error) {
+                        console.error("Could not sync wishlist", error);
+                    }
                 }
 
-                // Format dates for Calendar
+                // 3. Format dates for Calendar
                 const formattedDates = datesRes.data.data.map(booking => ({
                     start: new Date(booking.startDate),
                     end: new Date(booking.endDate)
@@ -78,7 +87,7 @@ const ProductDetails = () => {
             }
         };
         fetchDetails();
-    }, [id, navigate, user]); // Added user to dependency to re-check on login
+    }, [id, navigate, user]); 
 
     // Real-time Total Price Calculation
     useEffect(() => {
@@ -114,17 +123,14 @@ const ProductDetails = () => {
         }
     }, [startDate, endDate, product, unavailableDates]);
 
-    // 🔥 Handle Wishlist Toggle
     const handleWishlist = async () => {
         if (!user) {
             alert("Please login to save items.");
             return navigate('/login');
         }
         try {
-            // Optimistic UI update (change color immediately)
-            const newStatus = !isWishlisted;
-            setIsWishlisted(newStatus);
-            
+            // Optimistic Update: Change color immediately
+            setIsWishlisted(!isWishlisted);
             await toggleWishlist(product._id);
         } catch (error) {
             console.error("Wishlist action failed", error);
@@ -223,7 +229,7 @@ const ProductDetails = () => {
                             <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 shadow-sm relative group">
                                 <img src={displayImages[activeImageIndex]} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-105" />
                                 
-                                {/* 🔥 Heart Button (Over Image for cool effect) */}
+                                {/* Heart Button */}
                                 <button 
                                     onClick={handleWishlist}
                                     className={`absolute top-4 right-4 p-3 rounded-full shadow-lg backdrop-blur-md transition-all duration-300 ${
@@ -369,6 +375,7 @@ const ProductDetails = () => {
                             {!isOwner ? (
                                 <form onSubmit={handleRent} className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
+                                        
                                         <div className="space-y-1.5 flex flex-col">
                                             <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Start Date</label>
                                             <DatePicker

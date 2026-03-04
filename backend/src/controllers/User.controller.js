@@ -266,9 +266,9 @@ const toggleWishList= asyncHandler(async(req,res)=>{
         user.wishlist.push(productId);
     }
 
-    await User.save({validateBeforeSave: false});
-    new ApiResponse(200, { wishlist: user.wishlist, isAdded: !isAdded }, 
-        isAdded ? "Removed from wishlist" : "Added to wishlist")
+    await user.save({validateBeforeSave: false});
+    return res.status(200).json(new ApiResponse(200, { wishlist: user.wishlist, isAdded: !isAdded }, 
+        isAdded ? "Removed from wishlist" : "Added to wishlist"));
     
     
 })
