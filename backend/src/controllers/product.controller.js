@@ -10,8 +10,8 @@ const addProduct = asyncHandler(async(req, res) => {
         throw new ApiError(403,"You must switch to lending role");
     }
     
-    // 🔥 Added latitude and longitude
-    const {name, description, category, pricePerDay, location, latitude, longitude} = req.body;
+    // 🔥 Added quantity
+    const {name, description, category, pricePerDay, location, latitude, longitude, quantity} = req.body;
 
     if ([name, description, category, location, pricePerDay].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "All fields are required");
@@ -41,11 +41,11 @@ const addProduct = asyncHandler(async(req, res) => {
         pricePerDay,
         location,
         productImages,
-        // 🔥 NEW: Save exact location for map math
+        quantity: quantity || 1, // 🔥 Save Quantity
         geoLocation: {
             type: 'Point',
             coordinates: [
-                parseFloat(longitude || 0), // Longitude must be first!
+                parseFloat(longitude || 0),
                 parseFloat(latitude || 0)
             ]
         }
@@ -54,16 +54,14 @@ const addProduct = asyncHandler(async(req, res) => {
     return res.status(201).json(new ApiResponse(201, product, "Product added successfully"));
 });
 
-// 2. get all products
+// 2. get all products (Unchanged, just kept for completeness)
 const getAllProducts = asyncHandler(async(req,res)=>{
-    // 🔥 Added radius
     const {search, category, minPrice, maxPrice, lat, lng, location, radius} = req.query;
     const filter = { isAvailable: true };
 
     if(search) filter.name = { $regex: search, $options: "i" };
     if(category) filter.category = category;
     
-    // 🔥 Calculate radius in meters (default to 5km if not provided)
     const maxDistanceMeters = radius ? Number(radius) * 1000 : 5000;
 
     if (lat && lng) {
@@ -73,7 +71,7 @@ const getAllProducts = asyncHandler(async(req,res)=>{
                     type: "Point",
                     coordinates: [parseFloat(lng), parseFloat(lat)]
                 },
-                $maxDistance: maxDistanceMeters // 🔥 Dynamic Math!
+                $maxDistance: maxDistanceMeters 
             }
         };
     } else if (location) {
@@ -98,7 +96,8 @@ const getProductById= asyncHandler(async(req,res)=>{
 // Update Product
 const updateProduct = asyncHandler(async(req,res)=>{
     const {id}= req.params;
-    const {name,description,category,pricePerDay,location,isAvailable}= req.body;
+    // 🔥 Added quantity to updates
+    const {name,description,category,pricePerDay,location,isAvailable, quantity}= req.body;
 
     let product = await Product.findById(id);
 
@@ -115,6 +114,7 @@ const updateProduct = asyncHandler(async(req,res)=>{
     if(category) product.category=category;
     if(pricePerDay) product.pricePerDay=pricePerDay;
     if(location) product.location=location;
+    if(quantity) product.quantity=quantity; // 🔥 Update Quantity
     if(isAvailable !== undefined) product.isAvailable=isAvailable;
 
     if(req.files && req.files.length > 0){

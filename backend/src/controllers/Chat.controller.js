@@ -40,10 +40,7 @@ If unsure, ask them to email support@lendsphere.com.
 
 // ===== MODEL FALLBACK LIST =====
 const DEFAULT_GEMINI_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.0-pro"
+    "gemini-2.5-flash"
 ];
 
 // Allows override from .env

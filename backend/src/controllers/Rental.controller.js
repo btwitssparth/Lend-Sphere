@@ -5,9 +5,7 @@ import { Rental } from "../models/Rental.model.js";
 import { Product } from "../models/Product.model.js";
 
 // 1. Rent a Product 
-// 1. Rent a Product 
 const rentItem = asyncHandler(async (req, res) => {
-    // 🔥 ADDED renterAddress here
     const { productId, startDate, endDate, renterAddress } = req.body;
 
     if (!productId || !startDate || !endDate || !renterAddress) {
@@ -29,17 +27,24 @@ const rentItem = asyncHandler(async (req, res) => {
     if (!product.isAvailable) throw new ApiError(400, "Product is currently not available");
     if (product.owner.toString() === req.user._id.toString()) throw new ApiError(400, "You cannot rent your own product");
 
+    // 🔥 INVENTORY CHECK LOGIC
+    // Find all rentals that overlap with the requested dates
     const conflictingRentals = await Rental.find({
         product: productId,
         status: { $in: ['Pending', 'Approved', 'Active'] },
         $or: [
-            { startDate: { $lte: start }, endDate: { $gte: start } },
-            { startDate: { $lte: end }, endDate: { $gte: end } },
-            { startDate: { $gte: start }, endDate: { $lte: end } }
+            { startDate: { $lte: start }, endDate: { $gte: start } }, // Case 1: Existing rental covers start date
+            { startDate: { $lte: end }, endDate: { $gte: end } },     // Case 2: Existing rental covers end date
+            { startDate: { $gte: start }, endDate: { $lte: end } }    // Case 3: Existing rental is inside requested dates
         ]
     });
 
-    if (conflictingRentals.length > 0) throw new ApiError(409, "These dates are already booked");
+    // 🔥 Check if the overlap count meets or exceeds the inventory limit
+    const totalInventory = product.quantity || 1; 
+    
+    if (conflictingRentals.length >= totalInventory) {
+        throw new ApiError(409, `All ${totalInventory} units of this item are booked for these dates.`);
+    }
 
     const timeDiff = end.getTime() - start.getTime();
     const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
@@ -48,7 +53,7 @@ const rentItem = asyncHandler(async (req, res) => {
 
     const rental = await Rental.create({
         renter: req.user._id,
-        renterAddress, // 🔥 Saved to DB
+        renterAddress,
         product: productId,
         startDate: start,
         endDate: end,
@@ -59,7 +64,10 @@ const rentItem = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, rental, "Rental request sent successfully"));
 });
 
-// 2. Get Unavailable Dates 
+// 2. Get Unavailable Dates (Still works, but stricter)
+// ... existing imports ...
+
+// 2. Get Unavailable Dates (SMART CALENDAR LOGIC)
 const getUnavailableDates = asyncHandler(async (req, res) => {
     const { productId } = req.params;
 
@@ -67,34 +75,97 @@ const getUnavailableDates = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Product ID is required");
     }
 
-    // STRIP TIME so we don't accidentally hide today's bookings
+    const product = await Product.findById(productId);
+    if (!product) throw new ApiError(404, "Product not found");
+
+    const quantity = product.quantity || 1; // Get total inventory
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Fetch all future active rentals for this product
     const rentals = await Rental.find({
         product: productId,
         endDate: { $gte: today }, 
-        status: { $in: ['Pending', 'Approved', 'Active'] } // Fixed Enum!
-    }).select('startDate endDate -_id'); 
+        status: { $in: ['Pending', 'Approved', 'Active'] } 
+    });
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, rentals, "Unavailable dates fetched successfully"));
+    if (rentals.length === 0) {
+        return res.status(200).json(new ApiResponse(200, [], "All dates available"));
+    }
+
+    // FAST PATH: If inventory is 1, just return the rental dates
+    if (quantity === 1) {
+        const simpleDates = rentals.map(r => ({
+            startDate: r.startDate,
+            endDate: r.endDate
+        }));
+        return res.status(200).json(new ApiResponse(200, simpleDates, "Unavailable dates fetched"));
+    }
+
+    // SMART PATH: If inventory > 1, calculate strictly overlapping days
+    const fullyBookedDates = [];
+    
+    // Find the absolute furthest end date among all rentals
+    const maxDate = new Date(Math.max(...rentals.map(r => new Date(r.endDate).getTime())));
+    maxDate.setHours(0, 0, 0, 0);
+
+    let currentUnavailableStart = null;
+    let currentDate = new Date(today);
+
+    // Go one day past the max date to ensure we close out the final interval loop
+    const loopEnd = new Date(maxDate);
+    loopEnd.setDate(loopEnd.getDate() + 1);
+
+    // Loop through every single day from today until the furthest booked date
+    while (currentDate <= loopEnd) {
+        const currentTime = currentDate.getTime();
+        
+        // Count how many rentals overlap on this specific day
+        const overlappingCount = rentals.filter(r => {
+            const s = new Date(r.startDate).setHours(0, 0, 0, 0);
+            const e = new Date(r.endDate).setHours(0, 0, 0, 0);
+            return currentTime >= s && currentTime <= e;
+        }).length;
+
+        // If bookings hit max inventory, this day is fully booked
+        if (overlappingCount >= quantity) {
+            if (!currentUnavailableStart) {
+                currentUnavailableStart = new Date(currentDate); // Start an interval
+            }
+        } else {
+            // If the day is NOT fully booked, but we were tracking an interval, close it
+            if (currentUnavailableStart) {
+                const intervalEnd = new Date(currentDate);
+                intervalEnd.setDate(intervalEnd.getDate() - 1); // Yesterday was the last fully booked day
+                
+                fullyBookedDates.push({
+                    startDate: currentUnavailableStart,
+                    endDate: intervalEnd
+                });
+                currentUnavailableStart = null;
+            }
+        }
+
+        // Move to the next day
+        currentDate.setDate(currentDate.getDate() + 1);
+        currentDate.setHours(0, 0, 0, 0); // Re-normalize to midnight safely
+    }
+
+    return res.status(200).json(new ApiResponse(200, fullyBookedDates, "Smart unavailable dates calculated"));
 });
 
-// 3. Get My Rentals (Items I have rented)
+
+
 const getMyRentals = asyncHandler(async (req, res) => {
     const rentals = await Rental.find({ renter: req.user._id })
         .populate("product", "name productImage pricePerDay productImages")
         .populate("review")
         .sort({ createdAt: -1 });
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, rentals, "My rentals fetched Successfully"));
+    return res.status(200).json(new ApiResponse(200, rentals, "My rentals fetched Successfully"));
 });
 
-// 4. Get Rentals for my products (Lender View)
 const getLenderRentals = asyncHandler(async(req, res)=>{
     const rentals = await Rental.find()
         .populate({
@@ -108,31 +179,20 @@ const getLenderRentals = asyncHandler(async(req, res)=>{
 
     const myLendingRequests = rentals.filter(rental => rental.product !== null);
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, myLendingRequests, "Incoming rental requests fetched"));
+    return res.status(200).json(new ApiResponse(200, myLendingRequests, "Incoming rental requests fetched"));
 });
 
-// 5. Update Rental Status
 const updateRentalStatus = asyncHandler(async(req, res)=>{
     const { rentalId, status } = req.body;
-
     const rental = await Rental.findById(rentalId).populate("product");
     
-    if(!rental){
-        throw new ApiError(404, "Rental request not found");
-    }
-
-    if(rental.product.owner.toString() !== req.user._id.toString()){
-        throw new ApiError(403, "You can only manage rentals for your own products");
-    }
+    if(!rental) throw new ApiError(404, "Rental request not found");
+    if(rental.product.owner.toString() !== req.user._id.toString()) throw new ApiError(403, "Unauthorized");
 
     rental.status = status;
     await rental.save();
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, rental, `Rental status updated to ${status}`));
+    return res.status(200).json(new ApiResponse(200, rental, `Rental status updated to ${status}`));
 });
 
 export { rentItem, getUnavailableDates, getMyRentals, getLenderRentals, updateRentalStatus };

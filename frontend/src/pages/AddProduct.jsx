@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { addProduct } from '../api/products';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Upload, DollarSign, MapPin, Type, AlignLeft, Tag, Loader2, Navigation } from 'lucide-react'; // 🔥 Added Navigation icon
+import { Upload, DollarSign, MapPin, Type, AlignLeft, Tag, Loader2, Navigation, Layers } from 'lucide-react'; // 🔥 Added Layers icon
 import { Button } from '../components/Ui/Button';
 
 const AddProduct = () => {
@@ -16,8 +16,9 @@ const AddProduct = () => {
         category: '',
         pricePerDay: '',
         location: '',
-        latitude: '',  // 🔥 New state
-        longitude: ''  // 🔥 New state
+        quantity: '1', // 🔥 Default Quantity
+        latitude: '', 
+        longitude: '' 
     });
 
     const handleChange = (e) => {
@@ -38,7 +39,6 @@ const AddProduct = () => {
         setPreviews(newPreviews);
     };
 
-    // 🔥 NEW: Grab GPS coordinates
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
             alert("Geolocation is not supported by your browser");
@@ -50,7 +50,7 @@ const AddProduct = () => {
                     ...formData,
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
-                    location: "Current Location" // Fill text so user knows it worked
+                    location: "Current Location" 
                 });
             },
             () => {
@@ -71,9 +71,11 @@ const AddProduct = () => {
             }
         });
 
-        formData.productImages.forEach(file => {
-            data.append('productImages', file);
-        });
+        if(formData.productImages) {
+            formData.productImages.forEach(file => {
+                data.append('productImages', file);
+            });
+        }
 
         try {
             await addProduct(data);
@@ -208,8 +210,26 @@ const AddProduct = () => {
                                 </div>
                             </div>
 
-                            {/* 🔥 UPDATED LOCATION WITH GPS BUTTON 🔥 */}
-                            <div className="md:col-span-2">
+                            {/* 🔥 NEW: Quantity Input */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Quantity (Inventory)</label>
+                                <div className="relative">
+                                    <Layers className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
+                                    <input 
+                                        type="number" 
+                                        name="quantity" 
+                                        required 
+                                        min="1"
+                                        value={formData.quantity}
+                                        placeholder="1" 
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Location */}
+                            <div className="md:col-span-2 md:col-start-1">
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Location</label>
                                 <div className="flex gap-2">
                                     <div className="relative flex-1">

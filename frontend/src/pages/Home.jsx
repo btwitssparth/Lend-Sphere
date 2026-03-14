@@ -1,254 +1,209 @@
-// ... keep imports ...
 import { useEffect, useState } from 'react';
 import { getAllProducts } from '../api/products';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Search, MapPin, ArrowRight, Filter, AlertCircle, Star, ShieldCheck, Navigation } from 'lucide-react';
-import { Button } from '../components/Ui/Button';
+import { ProductCard } from '../components/ProductCard';
+import ProductMap from '../components/ProductMap'; // 🔥 Import the Map
+import { Search, SlidersHorizontal, Map as MapIcon, Grid, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const QUICK_CATEGORIES = ['Cameras', 'Drones', 'Power Tools', 'Party Gear', 'Bicycles'];
-
-// 🔥 Added radius & setRadius to props
-const Hero = ({ search, setSearch, category, setCategory, location, setLocation, radius, setRadius, handleSearch, handleGetLocation }) => (
-    <div className="relative border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
-        <div className="relative px-6 py-20 md:py-28 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
-            
-            <div className="flex-1 text-left w-full">
-                {/* ... Shield Badge, Title, P tags stay same ... */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 mb-6 transition-colors shadow-sm">
-                    <ShieldCheck className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
-                    Verified Local Lenders
-                </motion.div>
-
-                <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-zinc-900 dark:text-zinc-50 mb-6 transition-colors leading-[1.1]">
-                    Access premium gear. <br className="hidden lg:block" />
-                    <span className="text-zinc-400 dark:text-zinc-500 font-medium tracking-tight">Zero ownership required.</span>
-                </motion.h1>
-
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="w-full max-w-5xl">
-                    <form onSubmit={handleSearch} className="flex flex-col lg:flex-row p-1.5 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 focus-within:ring-2 focus-within:ring-zinc-900 dark:focus-within:ring-zinc-100 transition-all duration-200 mb-4">
-                        
-                        <div className="flex-1 flex items-center px-4 h-14">
-                            <Search className="w-5 h-5 text-zinc-400 dark:text-zinc-500 mr-3 shrink-0" />
-                            <input type="text" placeholder="What do you need?" className="w-full bg-transparent text-zinc-900 dark:text-zinc-100 outline-none placeholder:text-zinc-400 text-base font-medium" value={search} onChange={(e) => setSearch(e.target.value)} />
-                        </div>
-                        <div className="h-px lg:h-8 lg:w-px bg-zinc-200 dark:bg-zinc-800 mx-2 my-1 lg:my-auto transition-colors"></div>
-                        
-                        {/* Location + Radius Dropdown */}
-                        <div className="flex-[1.5] flex items-center pl-4 pr-2 h-14 relative">
-                            <MapPin className="w-5 h-5 text-zinc-400 dark:text-zinc-500 mr-3 shrink-0" />
-                            <input type="text" placeholder="City or Zip" className="w-full bg-transparent text-zinc-900 dark:text-zinc-100 outline-none placeholder:text-zinc-400 text-base font-medium" value={location} onChange={(e) => setLocation(e.target.value)} />
-                            
-                            {/* 🔥 NEW RADIUS SELECTOR 🔥 */}
-                            <select 
-                                value={radius} 
-                                onChange={(e) => setRadius(e.target.value)} 
-                                className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs py-1.5 px-2 rounded outline-none cursor-pointer border border-zinc-200 dark:border-zinc-700 mx-2"
-                            >
-                                <option value="2">2 km</option>
-                                <option value="5">5 km</option>
-                                <option value="10">10 km</option>
-                                <option value="25">25 km</option>
-                            </select>
-
-                            <button type="button" onClick={handleGetLocation} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-blue-600 dark:text-blue-500 transition-colors" title="Use my current location">
-                                <Navigation className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="h-px lg:h-8 lg:w-px bg-zinc-200 dark:bg-zinc-800 mx-2 my-1 lg:my-auto transition-colors"></div>
-                        
-                        <div className="lg:w-40 relative flex items-center">
-                            <select className="w-full h-14 pl-3 pr-8 bg-transparent text-zinc-600 dark:text-zinc-300 outline-none cursor-pointer text-sm font-medium appearance-none" value={category} onChange={(e) => setCategory(e.target.value)}>
-                                <option value="" className="bg-white dark:bg-zinc-900">All Items</option>
-                                <option value="Electronics" className="bg-white dark:bg-zinc-900">Electronics</option>
-                                <option value="Cameras" className="bg-white dark:bg-zinc-900">Cameras</option>
-                            </select>
-                            <Filter className="w-4 h-4 text-zinc-400 absolute right-4 pointer-events-none" />
-                        </div>
-                        
-                        <Button type="submit" size="lg" className="h-14 mt-2 lg:mt-0 rounded-lg px-8 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold w-full lg:w-auto">
-                            Search
-                        </Button>
-                    </form>
-                </motion.div>
-            </div>
-        </div>
-    </div>
-);
+const CATEGORIES = ["All", "Electronics", "Furniture", "Vehicles", "Fitness", "Tools"];
 
 const Home = () => {
     const [products, setProducts] = useState([]);
-    const [search, setSearch] = useState("");
-    const [category, setCategory] = useState("");
-    const [location, setLocation] = useState(""); 
-    const [lat, setLat] = useState("");
-    const [lng, setLng] = useState("");
-    const [radius, setRadius] = useState(5); // 🔥 Default to 5km
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    
+    // View Toggle State (Grid vs Map)
+    const [viewMode, setViewMode] = useState('grid'); 
 
-    const fetchProducts = async (searchTerm = "", categoryTerm = "", locationTerm = "", latTerm = "", lngTerm = "", rad = radius) => {
-        setLoading(true);
+    const [filters, setFilters] = useState({
+        search: '',
+        category: 'All',
+        location: ''
+    });
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    const fetchProducts = async () => {
         try {
-            const response = await getAllProducts(searchTerm, categoryTerm, locationTerm, latTerm, lngTerm, rad);
+            setLoading(true);
+            
+            const queryParams = new URLSearchParams();
+            if (filters.search) queryParams.append('search', filters.search);
+            if (filters.category !== 'All') queryParams.append('category', filters.category);
+            if (filters.location) queryParams.append('location', filters.location);
+            
+            const response = await getAllProducts(queryParams.toString());
             setProducts(response.data.data);
-        } catch (error) {
-            console.error("Error fetching products:", error);
+            setError('');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to fetch products');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchProducts(); }, []);
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchProducts();
+        }, 300); 
+        return () => clearTimeout(timeoutId);
+    }, [filters]);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        fetchProducts(search, category, location, lat, lng, radius);
-    };
-
-    const handleGetLocation = () => {
-        if (!navigator.geolocation) return alert("Geolocation not supported");
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setLat(position.coords.latitude);
-                setLng(position.coords.longitude);
-                setLocation(`Near Me`); 
-                fetchProducts(search, category, "Near Me", position.coords.latitude, position.coords.longitude, radius);
-            },
-            () => alert("Unable to retrieve location.")
-        );
+    const handleFilterChange = (e) => {
+        setFilters({ ...filters, [e.target.name]: e.target.value });
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
-            <Hero 
-                search={search} setSearch={setSearch} 
-                category={category} setCategory={setCategory} 
-                location={location} setLocation={setLocation}        
-                radius={radius} setRadius={setRadius} // 🔥 Passed new state
-                handleSearch={handleSearch} handleGetLocation={handleGetLocation} 
-            />
-            {/* ... Rest of your Home UI displaying the products remains the same ... */}
-
-            <div className="max-w-7xl mx-auto px-4 md:px-8 py-20">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-12 gap-4">
+        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pt-24 pb-12 transition-colors duration-300">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                {/* Hero / Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
                     <div>
-                        <h2 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight transition-colors">
-                            {lat && lng ? "Nearby Listings" : "Featured Listings"}
-                        </h2>
-                        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg transition-colors">Equipment available in your neighborhood today.</p>
+                        <motion.h1 
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight mb-3"
+                        >
+                            Rent Anything, <span className="text-blue-600 dark:text-blue-500">Anywhere.</span>
+                        </motion.h1>
+                        <motion.p 
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                            className="text-lg text-zinc-600 dark:text-zinc-400 font-medium"
+                        >
+                            Discover everyday items from people nearby.
+                        </motion.p>
+                    </div>
+
+                    {/* View Toggle (Grid / Map) */}
+                    <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl shadow-sm">
+                        <button 
+                            onClick={() => setViewMode('grid')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                viewMode === 'grid' 
+                                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm' 
+                                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+                            }`}
+                        >
+                            <Grid className="w-4 h-4" /> List
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('map')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                viewMode === 'map' 
+                                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm' 
+                                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+                            }`}
+                        >
+                            <MapIcon className="w-4 h-4" /> Map
+                        </button>
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[1,2,3,4].map(i => (
-                            <div key={i} className="h-[420px] bg-zinc-100 dark:bg-zinc-900 rounded-xl animate-pulse transition-colors border border-zinc-200 dark:border-zinc-800"></div>
-                        ))}
+                {/* Search and Filters Bar */}
+                <div className="bg-white dark:bg-zinc-900 p-2 sm:p-3 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 mb-10 flex flex-col sm:flex-row gap-3 transition-colors relative z-20">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 w-5 h-5" />
+                        <input 
+                            type="text" 
+                            name="search" 
+                            placeholder="What are you looking for?" 
+                            className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 dark:bg-zinc-950 border border-transparent focus:border-blue-500 dark:focus:border-blue-500 rounded-xl outline-none text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-500 dark:placeholder:text-zinc-500 font-medium transition-all"
+                            value={filters.search} onChange={handleFilterChange}
+                        />
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                        {products.length > 0 ? (
-                            products.map((product, index) => {
-                                const ownerName = product.owner?.name || product.ownerName || "Local Lender";
-                                const ownerAvatar = product.owner?.avatar || product.ownerAvatar;
-                                const rating = product.rating || product.owner?.rating;
+                    
+                    <div className="hidden md:flex gap-3">
+                        <select 
+                            name="category" 
+                            className="px-5 py-3.5 bg-zinc-50 dark:bg-zinc-950 border border-transparent focus:border-blue-500 rounded-xl outline-none text-zinc-900 dark:text-zinc-50 font-medium cursor-pointer appearance-none min-w-[160px]"
+                            value={filters.category} onChange={handleFilterChange}
+                        >
+                            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        
+                        <input 
+                            type="text" name="location" placeholder="City or area..." 
+                            className="px-5 py-3.5 bg-zinc-50 dark:bg-zinc-950 border border-transparent focus:border-blue-500 rounded-xl outline-none text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-500 font-medium w-48"
+                            value={filters.location} onChange={handleFilterChange}
+                        />
+                    </div>
 
-                                return (
-                                    <motion.div
-                                        key={product._id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        whileHover={{ y: -6 }}
-                                        className="h-full"
-                                    >
-                                        <Link to={`/product/${product._id}`} className="group block h-full">
-                                            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all duration-300 h-full flex flex-col hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.02)]">
-                                                
-                                                <div className="relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
-                                                    <img 
-                                                        src={product.productImages?.[0] || product.productImage || '/default-placeholder.png'} 
-                                                        alt={product.name} 
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                                                    />
-                                                    <div className="absolute top-4 left-4 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors">
-                                                        {product.category}
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="p-5 flex flex-col flex-1">
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-300 dark:border-zinc-700">
-                                                                {ownerAvatar ? (
-                                                                    <img src={ownerAvatar} alt={ownerName} className="w-full h-full object-cover" />
-                                                                ) : (
-                                                                    <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
-                                                                        {ownerName.charAt(0).toUpperCase()}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 line-clamp-1">
-                                                                by {ownerName}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 shrink-0">
-                                                            <Star className="w-3.5 h-3.5 fill-zinc-900 text-zinc-900 dark:fill-zinc-100 dark:text-zinc-100" />
-                                                            {rating ? Number(rating).toFixed(1) : "New"}
-                                                        </div>
-                                                    </div>
+                    <button 
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        className="md:hidden flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 px-5 py-3.5 rounded-xl font-bold"
+                    >
+                        <SlidersHorizontal className="w-5 h-5" /> Filters
+                    </button>
+                </div>
 
-                                                    <div className="flex-1">
-                                                        <h3 className="font-extrabold text-xl text-zinc-900 dark:text-zinc-50 line-clamp-1 mb-2 group-hover:underline decoration-zinc-300 dark:decoration-zinc-600 underline-offset-4 transition-all">
-                                                            {product.name}
-                                                        </h3>
-                                                        <div className="flex items-center text-zinc-500 dark:text-zinc-400 text-sm font-medium transition-colors">
-                                                            <MapPin className="w-4 h-4 mr-1.5 shrink-0" />
-                                                            <span className="line-clamp-1">{product.location}</span>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="mt-6 pt-5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between transition-colors">
-                                                        <div className="flex items-baseline gap-1">
-                                                            <span className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">₹{product.pricePerDay}</span>
-                                                            <span className="text-sm text-zinc-500 dark:text-zinc-400 font-semibold">/day</span>
-                                                        </div>
-                                                        <div className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex items-center justify-center text-zinc-900 dark:text-zinc-100 group-hover:bg-zinc-900 group-hover:text-white dark:group-hover:bg-zinc-100 dark:group-hover:text-zinc-900 transition-all duration-300 shadow-sm">
-                                                            <ArrowRight className="w-5 h-5" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    </motion.div>
-                                );
-                            })
-                        ) : (
-                            <div className="col-span-full py-32 text-center border border-dashed border-zinc-300 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/30">
-                                <div className="w-16 h-16 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm transition-colors transform rotate-3">
-                                    <AlertCircle className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-3 transition-colors">No gear found</h3>
-                                <p className="text-zinc-500 dark:text-zinc-400 mb-8 max-w-md mx-auto text-lg transition-colors">We couldn't find any items matching your current filters. Try adjusting your search or expanding your area.</p>
-                                <Button 
-                                    variant="outline" 
-                                    size="lg"
-                                    className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-900 shadow-sm font-semibold" 
-                                    onClick={() => {
-                                        setSearch(""); 
-                                        setCategory(""); 
-                                        setLocation(""); 
-                                        setLat(""); 
-                                        setLng(""); 
-                                        fetchProducts("","","","","");
-                                    }}
+                {/* Mobile Filters Dropdown */}
+                <AnimatePresence>
+                    {isFilterOpen && (
+                        <motion.div 
+                            initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                            className="md:hidden bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 mb-8 space-y-4 shadow-lg overflow-hidden"
+                        >
+                            <div>
+                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 block">Category</label>
+                                <select 
+                                    name="category" className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 outline-none"
+                                    value={filters.category} onChange={handleFilterChange}
                                 >
-                                    Clear All Filters
-                                </Button>
+                                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
                             </div>
-                        )}
+                            <div>
+                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 block">Location</label>
+                                <input 
+                                    type="text" name="location" placeholder="E.g. Mumbai" 
+                                    className="w-full p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 outline-none"
+                                    value={filters.location} onChange={handleFilterChange}
+                                />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Main Content Area (Grid or Map) */}
+                {error && (
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl font-medium border border-red-200 dark:border-red-800 mb-8">
+                        {error}
                     </div>
                 )}
+
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="text-center py-20 px-4 bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
+                        <Search className="w-12 h-12 text-zinc-300 dark:text-zinc-600 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">No items found</h3>
+                        <p className="text-zinc-500 dark:text-zinc-400">Try adjusting your filters or search term.</p>
+                        <button 
+                            onClick={() => setFilters({search: '', category: 'All', location: ''})}
+                            className="mt-6 text-blue-600 font-bold hover:underline"
+                        >
+                            Clear all filters
+                        </button>
+                    </div>
+                ) : (
+                    // Toggle between Grid and Map based on state
+                    viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {products.map((product) => (
+                                <ProductCard key={product._id} product={product} />
+                            ))}
+                        </div>
+                    ) : (
+                        <motion.div 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                            className="w-full relative z-0"
+                        >
+                            <ProductMap products={products} />
+                        </motion.div>
+                    )
+                )}
+
             </div>
         </div>
     );

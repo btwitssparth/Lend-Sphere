@@ -19,6 +19,13 @@ const productSchema = new Schema({
         type: String,
         required: true
     },
+    // 🔥 NEW: Quantity Field (Inventory)
+    quantity: {
+        type: Number,
+        required: true,
+        default: 1, 
+        min: 1
+    },
     productImages:[ {
         type: String,
         required: true,
@@ -36,7 +43,7 @@ const productSchema = new Schema({
         type: Boolean,
         default: true
     },
-    // 🔥 NEW: Geospatial data for 5km map search
+    // 🔥 NEW: Geospatial data for Map Feature
     geoLocation: {
         type: {
             type: String,
@@ -52,7 +59,7 @@ const productSchema = new Schema({
     timestamps: true
 });
 
-// 🔥 Tell MongoDB to map this field on a 2D sphere (the Earth)
+// Index for map searches
 productSchema.index({ geoLocation: "2dsphere" });
 
 export const Product = mongoose.model("Product", productSchema);
