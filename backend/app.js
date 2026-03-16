@@ -15,8 +15,11 @@ import adminRouter from './src/routes/Admin.routes.js';
 const app = express();
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true
+    origin: [
+        "http://localhost:5173", 
+        "https://lend-sphere.vercel.app" // 🔥 Your exact Vercel URL
+    ],
+    credentials: true // This is required for cookies/login to work!
 }));
 
 app.use(express.json({limit: "16kb"}));
