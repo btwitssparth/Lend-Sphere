@@ -3,7 +3,7 @@ import { getAllDisputes, processDispute } from '../api/admin';
 import { ShieldAlert, Check, X, ExternalLink } from 'lucide-react';
 import { Button } from '../components/Ui/Button';
 import DisputeDetailsModal from '../components/DisputeDetailsModal';
-import DecisionModal from '../components/DecisionModal';
+import DecisionModal from '../components/Decisionmodal';
 
 const AdminDashboard = () => {
     const [disputes, setDisputes] = useState([]);
