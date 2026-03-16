@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Using env variable for the API URL
-const API_URL = `${import.meta.env.VITE_API_URL}/api/v1/users`;
+const API_URL = `${import.meta.env.VITE_API_URL}/users`;
 
 // Configure axios to always send cookies
 axios.defaults.withCredentials = true;
