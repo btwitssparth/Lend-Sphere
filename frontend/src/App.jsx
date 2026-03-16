@@ -1,8 +1,9 @@
-import { Routes, Route } from 'react-router-dom'; // 🔥 REMOVED 'BrowserRouter as Router'
+import { Routes, Route } from 'react-router-dom';
 
 // Components
 import Navbar from './components/Navbar';
 import SupportBot from './components/SupportBot';
+import Footer from './components/Footer'; // 🔥 1. IMPORT THE FOOTER HERE
 
 // Pages
 import Home from './pages/Home';
@@ -18,19 +19,15 @@ import AdminDashboard from './pages/AdminDashboard';
 import RenterDisputes from './pages/RenterDisputes';
 import Wishlist from "./pages/Wishlist"
 
-// REMOVED LoginForm/RegisterForm imports if they aren't used directly here
-
 function App() {
   return (
-    // 🔥 REMOVED <ThemeProvider>, <AuthProvider>, and <Router> wrappers here.
-    // They are already provided in main.jsx!
-    
     <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
       <Navbar />
       
       <SupportBot /> 
 
+      {/* The main tag has 'flex-grow' which pushes the footer to the bottom */}
       <main className="flex-grow">
         <Routes>
           {/* Public Routes */}
@@ -52,6 +49,7 @@ function App() {
           
           {/* Verification */}
           <Route path="/upload-id" element={<UploadId />} />
+          
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/disputes" element={<RenterDisputes />} />
@@ -60,6 +58,9 @@ function App() {
           <Route path="/wishlist" element={<Wishlist />} />
         </Routes>
       </main>
+
+      {/* 🔥 2. ADD THE FOOTER HERE */}
+      <Footer />
 
     </div>
   );

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProductById, deleteProduct } from '../api/products';
 import { rentProduct, getUnavailableDates } from '../api/rentals';
 import { getProductReviews } from '../api/reviews';
-import { toggleWishlist, getWishlist } from '../api/users'; // 🔥 Import getWishlist
+import { toggleWishlist, getWishlist } from '../api/users';
 import { useAuth } from '../Context/AuthContext';
 import { Button } from '../components/Ui/Button';
 import { 
@@ -51,13 +51,11 @@ const ProductDetails = () => {
                 const productData = productRes.data.data;
                 setProduct(productData);
 
-                // 2. 🔥 FETCH FRESH WISHLIST STATUS (Fixes the White Heart Issue)
+                // 2. Fetch Wishlist Status
                 if (user) {
                     try {
                         const wishlistRes = await getWishlist();
-                        const myWishlist = wishlistRes.data.data; // This is an array of populated product objects
-                        
-                        // Check if current product ID exists in the fetched wishlist
+                        const myWishlist = wishlistRes.data.data; 
                         const exists = myWishlist.some(item => item._id === productData._id);
                         setIsWishlisted(exists);
                     } catch (error) {
@@ -129,7 +127,6 @@ const ProductDetails = () => {
             return navigate('/login');
         }
         try {
-            // Optimistic Update: Change color immediately
             setIsWishlisted(!isWishlisted);
             await toggleWishlist(product._id);
         } catch (error) {
@@ -229,7 +226,6 @@ const ProductDetails = () => {
                             <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 shadow-sm relative group">
                                 <img src={displayImages[activeImageIndex]} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-105" />
                                 
-                                {/* Heart Button */}
                                 <button 
                                     onClick={handleWishlist}
                                     className={`absolute top-4 right-4 p-3 rounded-full shadow-lg backdrop-blur-md transition-all duration-300 ${
@@ -289,9 +285,10 @@ const ProductDetails = () => {
                                 )}
                             </div>
 
-                            {/* Flat Tags/Meta */}
+                            {/* 🔥 FIXED: Flat Tags/Meta with Correct Profile Link */}
                             <div className="flex flex-wrap gap-4 py-6 border-t border-b border-zinc-100 dark:border-zinc-800 mb-8 transition-colors">
-                                <Link to={`/u/${product.owner?._id}`} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 min-w-[200px] transition-colors cursor-pointer group">
+                                {/* FIXED LINK HERE */}
+                                <Link to={`/profile/${product.owner?._id || product.owner}`} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 min-w-[200px] transition-colors cursor-pointer group">
                                     <div className="w-10 h-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-sm group-hover:scale-105 transition-transform">
                                         <User className="w-5 h-5" />
                                     </div>

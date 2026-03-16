@@ -9,15 +9,11 @@ import {
     uploadIdentityProof,
     getUserProfile,
     toggleWishList,
-    getWishlist
-
-    
+    getWishlist,
+    updateUserProfile // 🔥 1. Added Import
 } from "../controllers/User.controller.js"
 
-// <--- 2. FIX IMPORT NAME (verifyJwt)
 import { verifyJwt } from "../middlewares/Auth.middleware.js"; 
-
-// <--- 3. ADD MISSING UPLOAD IMPORT
 import { upload } from "../middlewares/multer.middleware.js"; 
 
 const router = Router();
@@ -26,23 +22,24 @@ const router = Router();
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/google-login").post(googleLogin);
-router.route("/profile/:userId").get(getUserProfile)
+router.route("/profile/:userId").get(getUserProfile);
 
 // Secured Routes
 router.route("/logout").post(verifyJwt, logoutUser);
 router.route("/switch-role").post(verifyJwt, switchUserRole);
 router.route("/me").get(verifyJwt, getCurrentUser);
 
-// <--- 4. FIX ROUTE DEFINITION
+// 🔥 2. Added Route to update profile
+router.route("/profile").patch(verifyJwt, updateUserProfile);
+
 router.route("/upload-id").post(
-    verifyJwt,                   // Use 'verifyJwt' (matching the import above)
-    upload.single("identityProof"), // 'upload' is now defined
+    verifyJwt,                   
+    upload.single("identityProof"), 
     uploadIdentityProof
 );
 
-//Wishlist Routes
-router.route("/wishlist/toggle").post(verifyJwt,toggleWishList);
-router.route("/wishlist").get(verifyJwt,getWishlist);
-
+// Wishlist Routes
+router.route("/wishlist/toggle").post(verifyJwt, toggleWishList);
+router.route("/wishlist").get(verifyJwt, getWishlist);
 
 export default router;

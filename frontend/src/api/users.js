@@ -11,3 +11,6 @@ export const toggleWishlist = async (productId) => {
 export const getWishlist = async () => {
     return api.get('/users/wishlist');
 };
+export const updateUserProfile = async (profileData) => {
+    return api.patch('/users/profile', profileData);
+};

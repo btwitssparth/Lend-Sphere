@@ -168,11 +168,27 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 // ================== UPDATE USER PROFILE ==================
+// ================== UPDATE USER PROFILE ==================
 const updateUserProfile = asyncHandler(async (req, res) => {
-    const { name } = req.body;
-    if (!name || name.trim().length === 0) throw new ApiError(400, "Name is required");
-    const user = await User.findByIdAndUpdate(req.user._id, { $set: { name: name.trim() } }, { new: true, runValidators: true }).select("-password -refreshToken");
+    const { name, bio } = req.body;
+    
+    if (!name || name.trim().length === 0) {
+        throw new ApiError(400, "Name is required");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id, 
+        { 
+            $set: { 
+                name: name.trim(),
+                bio: bio ? bio.trim() : "" 
+            } 
+        }, 
+        { new: true, runValidators: true }
+    ).select("-password -refreshToken");
+
     if (!user) throw new ApiError(404, "User not found");
+    
     return res.status(200).json(new ApiResponse(200, user, "Profile updated successfully"));
 });
 

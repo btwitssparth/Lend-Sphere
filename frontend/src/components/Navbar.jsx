@@ -6,7 +6,7 @@ import { getLenderRequests, getMyRentals } from '../api/rentals';
 import { getDisputesAgainstMe } from '../api/dispute'; 
 import { 
     Moon, Sun, Menu, X, LogOut, LayoutDashboard, Package, 
-    PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Gavel, Heart 
+    PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Gavel, Heart, User // 🔥 Added User icon here
 } from 'lucide-react';
 import { Button } from './Ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,7 +96,6 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-20">
                     
-                    {/* 🔥 LOGO: Removed outer circle outline and added outline-none to prevent focus rings */}
                     <Link to="/" className="flex items-center gap-3 outline-none focus:outline-none">
                         <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="shrink-0 outline-none">
                             <defs>
@@ -105,7 +104,6 @@ const Navbar = () => {
                                     <stop offset="1" stopColor="#0284c7" />
                                 </linearGradient>
                             </defs>
-                            {/* Inner Logo Paths Only */}
                             <path d="M20 5C11.7157 5 5 11.7157 5 20" stroke="url(#brandGradientNavbar)" strokeWidth="3" strokeLinecap="round" />
                             <path d="M35 20C35 28.2843 28.2843 35 20 35" stroke="url(#brandGradientNavbar)" strokeWidth="3" strokeLinecap="round" />
                             <circle cx="20" cy="20" r="6" fill="url(#brandGradientNavbar)" />
@@ -233,6 +231,11 @@ const Navbar = () => {
                                                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                                                 </div>
                                                 
+                                                {/* 🔥 NEW: My Profile Link (Desktop) */}
+                                                <Link to={`/profile/${user._id}`} onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                                    <User className="w-4 h-4 mr-3" /> My Profile
+                                                </Link>
+
                                                 <Link to="/lender-dashboard" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                                     <LayoutDashboard className="w-4 h-4 mr-3" /> Dashboard
                                                 </Link>
@@ -321,6 +324,11 @@ const Navbar = () => {
                                             <ShieldAlert className="w-5 h-5 mr-3" /> Admin Console
                                         </Link>
                                     )}
+
+                                    {/* 🔥 NEW: My Profile Link (Mobile) */}
+                                    <Link to={`/profile/${user._id}`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <User className="w-5 h-5 mr-3 text-blue-500" /> My Profile
+                                    </Link>
 
                                     <Link to="/add-product" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         <PlusCircle className="w-5 h-5 mr-3 text-blue-500" /> List an Item
