@@ -6,9 +6,9 @@ import {uploadOnCloudinary} from '../utils/Cloudinary.js'
 
 // 1. Add a new product
 const addProduct = asyncHandler(async(req, res) => {
-    if(!req.user.roles.lending){
-        throw new ApiError(403,"You must switch to lending role");
-    }
+   // if(!req.user.roles.lending){
+      //  throw new ApiError(403,"You must switch to lending role");
+    //}
     
     // 🔥 Added quantity
     const {name, description, category, pricePerDay, location, latitude, longitude, quantity} = req.body;
