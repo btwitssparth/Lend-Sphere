@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
-import { useTheme } from '../Context/ThemeContext';
 import { getLenderRequests, getMyRentals } from '../api/rentals'; 
 import { getDisputesAgainstMe } from '../api/dispute'; 
 import { 
-    Moon, Sun, Menu, X, LogOut, LayoutDashboard, Package, 
-    PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Gavel, Heart, User // 🔥 Added User icon here
+    Menu, X, LogOut, LayoutDashboard, Package, 
+    PlusCircle, Bell, Circle, ShieldAlert, AlertTriangle, Heart, User, Settings 
 } from 'lucide-react';
 import { Button } from './Ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
-    const { isDarkMode, toggleTheme } = useTheme();
     const navigate = useNavigate();
     
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -52,7 +50,7 @@ const Navbar = () => {
                         id: 'dispute-active',
                         title: 'Action Required',
                         desc: `You have ${activeDisputes.length} active dispute(s) filed against you.`,
-                        link: '/disputes',
+                        link: '/disputes', // Can keep this deep link to disputes
                         icon: <AlertTriangle className="w-4 h-4 text-red-500" />
                     });
                 }
@@ -120,13 +118,6 @@ const Navbar = () => {
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center gap-6">
                         
-                        <button 
-                            onClick={toggleTheme} 
-                            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors outline-none focus:outline-none"
-                        >
-                            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                        </button>
-
                         {user ? (
                             <div className="flex items-center gap-4">
                                 
@@ -231,7 +222,6 @@ const Navbar = () => {
                                                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                                                 </div>
                                                 
-                                                {/* 🔥 NEW: My Profile Link (Desktop) */}
                                                 <Link to={`/profile/${user._id}`} onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                                     <User className="w-4 h-4 mr-3" /> My Profile
                                                 </Link>
@@ -248,8 +238,9 @@ const Navbar = () => {
                                                     <Heart className="w-4 h-4 mr-3" /> My Wishlist
                                                 </Link>
 
-                                                <Link to="/disputes" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                                                    <Gavel className="w-4 h-4 mr-3" /> Resolution Center
+                                                {/* 🔥 NEW: Settings Link */}
+                                                <Link to="/settings" onClick={() => setIsProfileOpen(false)} className="flex items-center px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                                    <Settings className="w-4 h-4 mr-3" /> Settings
                                                     {notifications.some(n => n.id === 'dispute-active') && (
                                                         <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                                                     )}
@@ -284,10 +275,6 @@ const Navbar = () => {
                                 )}
                             </Link>
                         )}
-
-                        <button onClick={toggleTheme} className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors outline-none focus:outline-none">
-                            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                        </button>
 
                         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-full outline-none focus:outline-none">
                             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -325,7 +312,6 @@ const Navbar = () => {
                                         </Link>
                                     )}
 
-                                    {/* 🔥 NEW: My Profile Link (Mobile) */}
                                     <Link to={`/profile/${user._id}`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                         <User className="w-5 h-5 mr-3 text-blue-500" /> My Profile
                                     </Link>
@@ -346,8 +332,9 @@ const Navbar = () => {
                                         <Heart className="w-5 h-5 mr-3 text-blue-500" /> My Wishlist
                                     </Link>
 
-                                    <Link to="/disputes" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                        <Gavel className="w-5 h-5 mr-3 text-blue-500" /> Resolution Center
+                                    {/* 🔥 NEW: Settings Link (Mobile) */}
+                                    <Link to="/settings" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center p-3 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <Settings className="w-5 h-5 mr-3 text-blue-500" /> Settings
                                         {notifications.some(n => n.id === 'dispute-active') && <Circle className="w-2 h-2 ml-auto fill-red-500 text-red-500 animate-pulse" />}
                                     </Link>
                                     

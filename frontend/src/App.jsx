@@ -18,6 +18,7 @@ import PublicProfile from './pages/PublicProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import RenterDisputes from './pages/RenterDisputes';
 import Wishlist from "./pages/Wishlist"
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
           {/* Protected Routes */}
           <Route path="/add-product" element={<AddProduct />} />
           <Route path="/edit-product/:id" element={<EditProduct />} />
+          <Route path="/settings" element={<Settings />} />
           
           {/* Dashboard Routes */}
           <Route path="/my-rentals" element={<MyRentals />} />
