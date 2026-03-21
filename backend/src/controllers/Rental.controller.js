@@ -3,8 +3,9 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Rental } from "../models/Rental.model.js";
 import { Product } from "../models/Product.model.js";
+import { sendEmail } from "../utils/sendEmail.js";
 
-// 1. Rent a Product 
+// 1. Rent a Product (Triggers Email to Lender)
 const rentItem = asyncHandler(async (req, res) => {
     const { productId, startDate, endDate, renterAddress } = req.body;
 
@@ -22,26 +23,22 @@ const rentItem = asyncHandler(async (req, res) => {
     if (start < today) throw new ApiError(400, "Start date cannot be in the past");
     if (end <= start) throw new ApiError(400, "End date must be after start date");
 
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).populate('owner');
     if (!product) throw new ApiError(404, "Product not found");
     if (!product.isAvailable) throw new ApiError(400, "Product is currently not available");
-    if (product.owner.toString() === req.user._id.toString()) throw new ApiError(400, "You cannot rent your own product");
+    if (product.owner._id.toString() === req.user._id.toString()) throw new ApiError(400, "You cannot rent your own product");
 
-    // 🔥 INVENTORY CHECK LOGIC
-    // Find all rentals that overlap with the requested dates
     const conflictingRentals = await Rental.find({
         product: productId,
         status: { $in: ['Pending', 'Approved', 'Active'] },
         $or: [
-            { startDate: { $lte: start }, endDate: { $gte: start } }, // Case 1: Existing rental covers start date
-            { startDate: { $lte: end }, endDate: { $gte: end } },     // Case 2: Existing rental covers end date
-            { startDate: { $gte: start }, endDate: { $lte: end } }    // Case 3: Existing rental is inside requested dates
+            { startDate: { $lte: start }, endDate: { $gte: start } },
+            { startDate: { $lte: end }, endDate: { $gte: end } },
+            { startDate: { $gte: start }, endDate: { $lte: end } }
         ]
     });
 
-    // 🔥 Check if the overlap count meets or exceeds the inventory limit
     const totalInventory = product.quantity || 1; 
-    
     if (conflictingRentals.length >= totalInventory) {
         throw new ApiError(409, `All ${totalInventory} units of this item are booked for these dates.`);
     }
@@ -61,135 +58,186 @@ const rentItem = asyncHandler(async (req, res) => {
         status: "Pending"
     });
 
+    // 📧 EMAIL TRIGGER: Notify Lender of new request
+    const lenderEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
+            <h2 style="color: #0ea5e9; margin-bottom: 20px;">New Rental Request! 📦</h2>
+            <p style="color: #374151; font-size: 16px;">
+                Hi <strong>${product.owner.name.split(' ')[0]}</strong>, someone wants to rent your <strong>${product.name}</strong>.
+            </p>
+            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                <p style="margin: 0 0 10px 0;"><strong>Renter:</strong> ${req.user.name}</p>
+                <p style="margin: 0 0 10px 0;"><strong>Dates:</strong> ${start.toLocaleDateString()} to ${end.toLocaleDateString()}</p>
+                <p style="margin: 0;"><strong>Total Earnings:</strong> ₹${totalPrice}</p>
+            </div>
+            <p style="color: #374151; font-size: 16px;">Please log in to your Lend-Sphere dashboard to approve or decline this request.</p>
+        </div>
+    `;
+
+    // Fire and forget (don't await so it doesn't slow down the user experience)
+    sendEmail({
+        email: product.owner.email, 
+        subject: "Action Required: New Rental Request 🚀",
+        html: lenderEmailHtml
+    });
+
     return res.status(201).json(new ApiResponse(201, rental, "Rental request sent successfully"));
 });
 
-// 2. Get Unavailable Dates (Still works, but stricter)
-// ... existing imports ...
-
-// 2. Get Unavailable Dates (SMART CALENDAR LOGIC)
+// 2. Get Unavailable Dates
 const getUnavailableDates = asyncHandler(async (req, res) => {
     const { productId } = req.params;
-
-    if (!productId) {
-        throw new ApiError(400, "Product ID is required");
-    }
+    if (!productId) throw new ApiError(400, "Product ID is required");
 
     const product = await Product.findById(productId);
     if (!product) throw new ApiError(404, "Product not found");
 
-    const quantity = product.quantity || 1; // Get total inventory
-
+    const quantity = product.quantity || 1;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Fetch all future active rentals for this product
     const rentals = await Rental.find({
         product: productId,
         endDate: { $gte: today }, 
         status: { $in: ['Pending', 'Approved', 'Active'] } 
     });
 
-    if (rentals.length === 0) {
-        return res.status(200).json(new ApiResponse(200, [], "All dates available"));
-    }
+    if (rentals.length === 0) return res.status(200).json(new ApiResponse(200, [], "All dates available"));
 
-    // FAST PATH: If inventory is 1, just return the rental dates
     if (quantity === 1) {
-        const simpleDates = rentals.map(r => ({
-            startDate: r.startDate,
-            endDate: r.endDate
-        }));
+        const simpleDates = rentals.map(r => ({ startDate: r.startDate, endDate: r.endDate }));
         return res.status(200).json(new ApiResponse(200, simpleDates, "Unavailable dates fetched"));
     }
 
-    // SMART PATH: If inventory > 1, calculate strictly overlapping days
     const fullyBookedDates = [];
-    
-    // Find the absolute furthest end date among all rentals
     const maxDate = new Date(Math.max(...rentals.map(r => new Date(r.endDate).getTime())));
     maxDate.setHours(0, 0, 0, 0);
 
     let currentUnavailableStart = null;
     let currentDate = new Date(today);
-
-    // Go one day past the max date to ensure we close out the final interval loop
     const loopEnd = new Date(maxDate);
     loopEnd.setDate(loopEnd.getDate() + 1);
 
-    // Loop through every single day from today until the furthest booked date
     while (currentDate <= loopEnd) {
         const currentTime = currentDate.getTime();
-        
-        // Count how many rentals overlap on this specific day
         const overlappingCount = rentals.filter(r => {
             const s = new Date(r.startDate).setHours(0, 0, 0, 0);
             const e = new Date(r.endDate).setHours(0, 0, 0, 0);
             return currentTime >= s && currentTime <= e;
         }).length;
 
-        // If bookings hit max inventory, this day is fully booked
         if (overlappingCount >= quantity) {
-            if (!currentUnavailableStart) {
-                currentUnavailableStart = new Date(currentDate); // Start an interval
-            }
+            if (!currentUnavailableStart) currentUnavailableStart = new Date(currentDate);
         } else {
-            // If the day is NOT fully booked, but we were tracking an interval, close it
             if (currentUnavailableStart) {
                 const intervalEnd = new Date(currentDate);
-                intervalEnd.setDate(intervalEnd.getDate() - 1); // Yesterday was the last fully booked day
-                
-                fullyBookedDates.push({
-                    startDate: currentUnavailableStart,
-                    endDate: intervalEnd
-                });
+                intervalEnd.setDate(intervalEnd.getDate() - 1);
+                fullyBookedDates.push({ startDate: currentUnavailableStart, endDate: intervalEnd });
                 currentUnavailableStart = null;
             }
         }
-
-        // Move to the next day
         currentDate.setDate(currentDate.getDate() + 1);
-        currentDate.setHours(0, 0, 0, 0); // Re-normalize to midnight safely
     }
 
-    return res.status(200).json(new ApiResponse(200, fullyBookedDates, "Smart unavailable dates calculated"));
+    return res.status(200).json(new ApiResponse(200, fullyBookedDates, "Unavailable dates fetched"));
 });
 
-
-
+// 3. Get My Rentals (Renter side)
 const getMyRentals = asyncHandler(async (req, res) => {
     const rentals = await Rental.find({ renter: req.user._id })
-        .populate("product", "name productImage pricePerDay productImages")
-        .populate("review")
+        .populate('product')
+        .populate({ path: 'product', populate: { path: 'owner', select: 'name email phone' } })
         .sort({ createdAt: -1 });
 
-    return res.status(200).json(new ApiResponse(200, rentals, "My rentals fetched Successfully"));
+    return res.status(200).json(new ApiResponse(200, rentals, "Rentals fetched successfully"));
 });
 
-const getLenderRentals = asyncHandler(async(req, res)=>{
-    // 1. Find all products owned by this user
-    const myProducts = await Product.find({ owner: req.user._id }).select("_id");
-    const myProductIds = myProducts.map(p => p._id);
+// 4. Get Lender Requests (Lender side)
+const getLenderRentals = asyncHandler(async (req, res) => {
+    const myProducts = await Product.find({ owner: req.user._id }).select('_id');
+    const productIds = myProducts.map(p => p._id);
 
-    // 2. Find rentals for these products
-    const myLendingRequests = await Rental.find({ product: { $in: myProductIds } })
-        .populate("product", "name pricePerDay productImage productImages")
-        .populate("renter", "name email identityProof")
-        .populate("review")
+    const rentals = await Rental.find({ product: { $in: productIds } })
+        .populate('product')
+        .populate('renter', 'name email phone')
         .sort({ createdAt: -1 });
 
-    return res.status(200).json(new ApiResponse(200, myLendingRequests, "Incoming rental requests fetched"));
+    return res.status(200).json(new ApiResponse(200, rentals, "Lender requests fetched successfully"));
 });
 
-const updateRentalStatus = asyncHandler(async(req, res)=>{
+// 5. Update Rental Status (Triggers Email to Renter)
+// 5. Update Rental Status (Triggers Email to Renter)
+const updateRentalStatus = asyncHandler(async (req, res) => {
     const { rentalId, status } = req.body;
-    const rental = await Rental.findById(rentalId).populate("product");
     
-    if(!rental) throw new ApiError(404, "Rental request not found");
-    if(rental.product.owner.toString() !== req.user._id.toString()) throw new ApiError(403, "Unauthorized");
+    if (!rentalId || !status) throw new ApiError(400, "Rental ID and status are required");
+
+    const validStatuses = ['Pending', 'Approved', 'Rejected', 'Active', 'Completed', 'Cancelled'];
+    if (!validStatuses.includes(status)) throw new ApiError(400, "Invalid status update");
+
+    const rental = await Rental.findById(rentalId)
+        .populate('product')
+        .populate('renter', 'name email');
+        
+    if (!rental) throw new ApiError(404, "Rental request not found");
+
+    if (rental.product.owner.toString() !== req.user._id.toString()) {
+        throw new ApiError(403, "You are not authorized to update this rental");
+    }
 
     rental.status = status;
     await rental.save();
+
+    // 📧 EMAIL TRIGGER: Notify Renter if Approved or Rejected
+    if (status === 'Approved' || status === 'Rejected') {
+        const statusColor = status === 'Approved' ? '#10b981' : '#ef4444'; // Green or Red
+        
+        let paymentBreakdownHtml = '';
+        if (status === 'Approved') {
+            // Calculate Total Amount
+            const securityDeposit = rental.product.securityDeposit || 0;
+            const rentAmount = rental.totalPrice || 0;
+            const totalAmount = rentAmount + securityDeposit;
+
+            paymentBreakdownHtml = `
+                <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #e2e8f0;">
+                    <h3 style="margin-top: 0; color: #0ea5e9; font-size: 16px; text-transform: uppercase; letter-spacing: 0.05em;">Payment Breakdown</h3>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="color: #475569; font-size: 15px;">Rental Amount:</span>
+                        <strong style="color: #1e293b; font-size: 15px;">₹${rentAmount}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                        <span style="color: #475569; font-size: 15px;">Security Deposit <span style="font-size: 12px; color: #94a3b8;">(Refundable)</span>:</span>
+                        <strong style="color: #1e293b; font-size: 15px;">₹${securityDeposit}</strong>
+                    </div>
+                    <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 15px 0;" />
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #0f172a; font-size: 18px; font-weight: bold;">Total to Pay:</span>
+                        <strong style="color: #0ea5e9; font-size: 20px;">₹${totalAmount}</strong>
+                    </div>
+                </div>
+                <p style="color: #374151; font-size: 16px;">Please log in to your dashboard to complete the secure payment and view pickup instructions.</p>
+            `;
+        } else {
+             paymentBreakdownHtml = `<p style="color: #374151; font-size: 16px;">Unfortunately, the lender cannot accommodate this request at this time. Don't worry, you haven't been charged!</p>`;
+        }
+
+        const renterEmailHtml = `
+            <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 16px; background-color: #ffffff;">
+                <h2 style="color: ${statusColor}; margin-bottom: 20px; text-align: center;">Rental Request ${status}!</h2>
+                <p style="color: #374151; font-size: 16px; line-height: 1.5;">
+                    Hi <strong>${rental.renter.name.split(' ')[0]}</strong>, your request to rent <strong>${rental.product.name}</strong> has been <strong>${status.toLowerCase()}</strong> by the owner.
+                </p>
+                ${paymentBreakdownHtml}
+            </div>
+        `;
+
+        sendEmail({
+            email: rental.renter.email,
+            subject: `Update on your rental request for ${rental.product.name}`,
+            html: renterEmailHtml
+        });
+    }
 
     return res.status(200).json(new ApiResponse(200, rental, `Rental status updated to ${status}`));
 });
