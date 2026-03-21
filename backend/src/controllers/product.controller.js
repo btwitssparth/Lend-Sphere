@@ -6,10 +6,6 @@ import {uploadOnCloudinary} from '../utils/Cloudinary.js'
 
 // 1. Add a new product
 const addProduct = asyncHandler(async(req, res) => {
-   // if(!req.user.roles.lending){
-      //  throw new ApiError(403,"You must switch to lending role");
-    //}
-    
     // 🔥 Added quantity
     const {name, description, category, pricePerDay, location, latitude, longitude, quantity} = req.body;
 
@@ -54,7 +50,7 @@ const addProduct = asyncHandler(async(req, res) => {
     return res.status(201).json(new ApiResponse(201, product, "Product added successfully"));
 });
 
-// 2. get all products (Unchanged, just kept for completeness)
+// 2. get all products
 const getAllProducts = asyncHandler(async(req,res)=>{
     const {search, category, minPrice, maxPrice, lat, lng, location, radius} = req.query;
     const filter = { isAvailable: true };
@@ -82,7 +78,7 @@ const getAllProducts = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200, products, "Product Fetched Successfully"));
 });
 
-// Get Single Product
+// 3. Get Single Product
 const getProductById= asyncHandler(async(req,res)=>{
     const {id}= req.params;
     const product= await Product.findById(id).populate("owner","name email");
@@ -93,10 +89,9 @@ const getProductById= asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,product,"Product fetched Successfully"));
 });
 
-// Update Product
+// 4. Update Product
 const updateProduct = asyncHandler(async(req,res)=>{
     const {id}= req.params;
-    // 🔥 Added quantity to updates
     const {name,description,category,pricePerDay,location,isAvailable, quantity}= req.body;
 
     let product = await Product.findById(id);
@@ -114,7 +109,7 @@ const updateProduct = asyncHandler(async(req,res)=>{
     if(category) product.category=category;
     if(pricePerDay) product.pricePerDay=pricePerDay;
     if(location) product.location=location;
-    if(quantity) product.quantity=quantity; // 🔥 Update Quantity
+    if(quantity) product.quantity=quantity; 
     if(isAvailable !== undefined) product.isAvailable=isAvailable;
 
     if(req.files && req.files.length > 0){
@@ -135,7 +130,7 @@ const updateProduct = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,product,"Product updated successfully"))
 });
 
-// Delete Product
+// 5. Delete Product
 const deleteProduct = asyncHandler(async(req,res)=>{
     const {id}= req.params;
     const product = await Product.findById(id);
@@ -148,6 +143,14 @@ const deleteProduct = asyncHandler(async(req,res)=>{
     }
     await Product.findByIdAndDelete(id);
     return res.status(200).json(new ApiResponse(200,{},"Product deleted successfully"))
-})
+});
 
-export {addProduct,getAllProducts,getProductById,updateProduct,deleteProduct}
+// 🔥 6. Get My Listings (RESTORED THIS FUNCTION!)
+const getMyListings = asyncHandler(async(req, res) => {
+    // Find all products where the owner is the currently logged-in user
+    const products = await Product.find({ owner: req.user._id }).sort({ createdAt: -1 });
+    return res.status(200).json(new ApiResponse(200, products, "My listings fetched successfully"));
+});
+
+// 🔥 Make sure getMyListings is exported here
+export { addProduct, getAllProducts, getProductById, updateProduct, deleteProduct, getMyListings }

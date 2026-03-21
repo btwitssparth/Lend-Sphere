@@ -1,9 +1,10 @@
 import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 // Components
 import Navbar from './components/Navbar';
 import SupportBot from './components/SupportBot';
-import Footer from './components/Footer'; // 🔥 1. IMPORT THE FOOTER HERE
+import Footer from './components/Footer';
 
 // Pages
 import Home from './pages/Home';
@@ -17,19 +18,32 @@ import UploadId from './pages/UploadId';
 import PublicProfile from './pages/PublicProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import RenterDisputes from './pages/RenterDisputes';
-import Wishlist from "./pages/Wishlist"
-import Settings from './pages/Settings';
+import Wishlist from "./pages/Wishlist";
 
 function App() {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
+      {/* The Global Notification Toaster - Dark Mode Styled */}
+      <Toaster 
+        position="top-center" 
+        toastOptions={{ 
+            style: { 
+              background: '#161616', 
+              color: '#F5F0E8', 
+              borderRadius: '10px', 
+              border: '1px solid #2A2A2A' 
+            },
+            success: {
+              iconTheme: { primary: '#C9A96E', secondary: '#161616' }
+            }
+        }} 
+      />
+
       <Navbar />
-      
       <SupportBot /> 
 
-      {/* The main tag has 'flex-grow' which pushes the footer to the bottom */}
-      <main className="flex-grow">
+      <main className="flex-grow pt-16">
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
@@ -43,7 +57,6 @@ function App() {
           {/* Protected Routes */}
           <Route path="/add-product" element={<AddProduct />} />
           <Route path="/edit-product/:id" element={<EditProduct />} />
-          <Route path="/settings" element={<Settings />} />
           
           {/* Dashboard Routes */}
           <Route path="/my-rentals" element={<MyRentals />} />
@@ -52,7 +65,7 @@ function App() {
           {/* Verification */}
           <Route path="/upload-id" element={<UploadId />} />
           
-          {/* Admin Routes */}
+          {/* Admin & Resolution Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/disputes" element={<RenterDisputes />} />
 
@@ -61,9 +74,7 @@ function App() {
         </Routes>
       </main>
 
-      {/* 🔥 2. ADD THE FOOTER HERE */}
       <Footer />
-
     </div>
   );
 }

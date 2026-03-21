@@ -1,28 +1,38 @@
 import { Router } from "express";
-import { 
-    addProduct, 
-    getAllProducts, 
-    getProductById, 
-    updateProduct, 
-    deleteProduct 
-} from "../controllers/product.controller.js";
-import { verifyJwt } from "../middlewares/Auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJwt } from "../middlewares/Auth.middleware.js";
+import {
+    addProduct, // 🔥 FIXED: Changed from createProduct to match your controller
+    getAllProducts,
+    getProductById,
+    updateProduct,
+    deleteProduct,
+    getMyListings
+} from "../controllers/product.controller.js";
 
 const router = Router();
 
-// Public Routes (Browsing)
-router.route("/").get(getAllProducts); // Supports ?search=camera&category=Electronics
+// Public Routes (Anyone can view products)
+router.route("/").get(getAllProducts);
 router.route("/:id").get(getProductById);
 
-// Secured Routes (Management)
-router.route("/add").post(
-    verifyJwt, 
-    upload.array("productImages", 5), 
-    addProduct
-);
+// Protected Routes (Must be logged in)
+router.use(verifyJwt);
 
-router.route("/:id").patch(verifyJwt, upload.array("productImages", 5), updateProduct);
-router.route("/:id").delete(verifyJwt, deleteProduct);
+router.route("/my-listings").get(getMyListings);
+
+// 🔥 FIXED: Now routing to addProduct
+router.route("/")
+    .post(upload.fields([
+        { name: "productImage", maxCount: 1 },
+        { name: "productImages", maxCount: 4 }
+    ]), addProduct);
+
+router.route("/:id")
+    .put(upload.fields([
+        { name: "productImage", maxCount: 1 },
+        { name: "productImages", maxCount: 4 }
+    ]), updateProduct)
+    .delete(deleteProduct);
 
 export default router;

@@ -1,30 +1,35 @@
 import api from './axios';
 
-// Add a new Product
-export const addProduct = async (productData) => {
-    return api.post('/products/add', productData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
+// Get all products
+export const getAllProducts = (queryString = '') => {
+    return api.get(`/products?${queryString}`);
 };
 
-// Get All Products (Supports Search & Filter)
-export const getAllProducts = async (search = "", category = "", location = "", lat = "", lng = "", radius = 5) => {
-    return api.get(`/products?search=${search}&category=${category}&location=${location}&lat=${lat}&lng=${lng}&radius=${radius}`);
-};
-
-// Get Single Product
-export const getProductById = async (id) => {
+// Get a single product by its ID
+export const getProductById = (id) => {
     return api.get(`/products/${id}`);
 };
 
-// Update Product
-export const updateProduct = async (id, formData) => {
-    return api.patch(`/products/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+// 🔥 FIXED: Renamed from createProduct to addProduct to match your UI
+export const addProduct = (productData) => {
+    return api.post('/products', productData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
     });
 };
 
-// Delete Product
-export const deleteProduct = async (id) => {
+// Update an existing product
+export const updateProduct = (id, productData) => {
+    return api.put(`/products/${id}`, productData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+};
+
+// Delete a product
+export const deleteProduct = (id) => {
     return api.delete(`/products/${id}`);
+};
+
+// Get all products listed by the currently logged-in user
+export const getMyListings = () => {
+    return api.get('/products/my-listings');
 };
