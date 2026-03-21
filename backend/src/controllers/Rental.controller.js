@@ -167,17 +167,16 @@ const getMyRentals = asyncHandler(async (req, res) => {
 });
 
 const getLenderRentals = asyncHandler(async(req, res)=>{
-    const rentals = await Rental.find()
-        .populate({
-            path: "product",
-            match: { owner: req.user._id },
-            select: "name pricePerDay productImage productImages"
-        })
+    // 1. Find all products owned by this user
+    const myProducts = await Product.find({ owner: req.user._id }).select("_id");
+    const myProductIds = myProducts.map(p => p._id);
+
+    // 2. Find rentals for these products
+    const myLendingRequests = await Rental.find({ product: { $in: myProductIds } })
+        .populate("product", "name pricePerDay productImage productImages")
         .populate("renter", "name email identityProof")
         .populate("review")
         .sort({ createdAt: -1 });
-
-    const myLendingRequests = rentals.filter(rental => rental.product !== null);
 
     return res.status(200).json(new ApiResponse(200, myLendingRequests, "Incoming rental requests fetched"));
 });

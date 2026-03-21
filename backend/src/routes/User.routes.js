@@ -10,7 +10,8 @@ import {
     getUserProfile,
     toggleWishList,
     getWishlist,
-    updateUserProfile // 🔥 1. Added Import
+    updateUserProfile,
+    refreshAccessToken 
 } from "../controllers/User.controller.js"
 
 import { verifyJwt } from "../middlewares/Auth.middleware.js"; 
@@ -22,6 +23,7 @@ const router = Router();
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 router.route("/google-login").post(googleLogin);
+router.route("/refresh-token").post(refreshAccessToken);
 router.route("/profile/:userId").get(getUserProfile);
 
 // Secured Routes

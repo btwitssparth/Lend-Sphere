@@ -16,7 +16,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // Always use secure for cross-site cookies
     sameSite: 'None',
 };
 

@@ -4,7 +4,7 @@ import api from './axios';
 
 // Send a rental request for a product
 export const rentProduct = async (rentalData) => {
-    return api.post('/rentals/request', rentalData);
+    return api.post('/rentals/rent', rentalData);
 };
 
 // Fetch the dates that are already booked for a specific product
@@ -22,10 +22,10 @@ export const getMyRentals = async () => {
 
 // 2. Lender: See requests for MY products
 export const getLenderRequests = async () => {
-    return api.get('/rentals/lender/requests');
+    return api.get('/rentals/lender-requests');
 };
 
 // 3. Lender: Approve or Reject a request
 export const updateRentalStatus = async (rentalId, status) => {
-    return api.post('/rentals/lender/update-status', { rentalId, status });
+    return api.patch('/rentals/status', { rentalId, status });
 };
