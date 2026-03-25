@@ -6,7 +6,7 @@ import { Button } from '../Ui/Button';
 import { Send, X, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const SOCKET_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '');
 
 const ChatBox = ({ rentalId, isOpen, onClose, rentalStatus }) => {
     const { user } = useAuth();
@@ -31,42 +31,40 @@ const ChatBox = ({ rentalId, isOpen, onClose, rentalStatus }) => {
     useEffect(() => {
         if (!isOpen || !rentalId || !user) return;
 
-        const fetchHistory = async () => {
-            try {
-                const res = await getMessages(rentalId);
-                // Make sure to safely access the messages array
-                setMessages(res.data?.data?.messages || []);
-            } catch (error) {
-                console.error("Failed to load messages:", error);
-                // If it fails, we still show an empty chat instead of breaking
-                setMessages([]); 
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchHistory();
-
-        socketRef.current = io(SOCKET_URL, {
+        // Ensure we connect to the base URL (no /api/v1)
+        const socket = io(SOCKET_URL, {
             withCredentials: true,
+            transports: ["websocket", "polling"],
+            reconnectionAttempts: 5,
+            timeout: 10000
         });
 
-        socketRef.current.on("connect", () => {
-            socketRef.current.emit("join_chat", rentalId);
+        socketRef.current = socket;
+
+        socket.on("connect", () => {
+            console.log("✅ Socket connected to room:", rentalId);
+            socket.emit("join_chat", rentalId);
         });
 
-        socketRef.current.on("receive_message", (message) => {
+        socket.on("reconnect", () => {
+            console.log("♻️ Socket reconnected to room:", rentalId);
+            socket.emit("join_chat", rentalId);
+        });
+
+        socket.on("connect_error", (error) => {
+            console.error("❌ Socket connection error:", error);
+        });
+
+        socket.on("receive_message", (message) => {
             setMessages((prev) => {
                 // Check if message already exists by ID
                 if (prev.some(m => m._id === message._id)) return prev;
                 
                 // Check if it's a message from the current user that matches an optimistic one
-                // This handles the case where the socket message arrives before the API call returns
                 const senderId = message.sender?._id || message.sender;
                 if (senderId === user?._id) {
                     const optimisticMatch = prev.find(m => m.isOptimistic && m.text === message.text);
                     if (optimisticMatch) {
-                        // Replace optimistic with the real one
                         return prev.map(m => m._id === optimisticMatch._id ? message : m);
                     }
                 }
@@ -75,10 +73,24 @@ const ChatBox = ({ rentalId, isOpen, onClose, rentalStatus }) => {
             });
         });
 
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.disconnect();
+        const fetchHistory = async () => {
+            try {
+                const res = await getMessages(rentalId);
+                setMessages(res.data?.data?.messages || []);
+            } catch (error) {
+                console.error("Failed to load messages:", error);
+                setMessages([]); 
+            } finally {
+                setLoading(false);
             }
+        };
+
+        fetchHistory();
+
+        return () => {
+            console.log("🔌 Disconnecting socket from room:", rentalId);
+            socket.disconnect();
+            socketRef.current = null;
         };
     }, [rentalId, isOpen, user]);
 

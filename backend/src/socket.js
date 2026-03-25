@@ -5,10 +5,15 @@ let io;
 export const initSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: process.env.CORS_ORIGIN || "http://localhost:5173", // Your frontend URL
+            origin: [
+                process.env.CORS_ORIGIN || "http://localhost:5173", 
+                "https://lend-sphere.vercel.app", // Common Vercel pattern
+                /\.vercel\.app$/ // Any Vercel preview URL
+            ],
             methods: ["GET", "POST"],
             credentials: true
-        }
+        },
+        transports: ["websocket", "polling"]
     });
 
     io.on("connection", (socket) => {
