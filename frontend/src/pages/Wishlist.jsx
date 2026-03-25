@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getWishlist } from '../api/users';
 import { motion } from 'framer-motion';
-import { Heart, MapPin, DollarSign, PackageX } from 'lucide-react';
+import { Heart, MapPin, IndianRupee, PackageX } from 'lucide-react';
 import { Button } from '../components/Ui/Button';
 
 const Wishlist = () => {
@@ -77,7 +77,7 @@ const Wishlist = () => {
                                         </div>
                                         <div className="flex items-center justify-between mt-2">
                                             <p className="font-black text-zinc-900 dark:text-zinc-50 flex items-center">
-                                                <DollarSign className="w-3.5 h-3.5" />
+                                                <IndianRupee className="w-3.5 h-3.5" />
                                                 {product.pricePerDay}<span className="text-xs font-medium text-zinc-400 ml-0.5">/day</span>
                                             </p>
                                             <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md">

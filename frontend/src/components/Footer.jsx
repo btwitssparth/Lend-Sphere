@@ -1,110 +1,102 @@
 import { Link } from 'react-router-dom';
-import { Twitter, Instagram, Facebook, Github, Mail, MapPin } from 'lucide-react';
+import { Twitter, Instagram, Facebook, Github, Mail, MapPin, ArrowRight } from 'lucide-react';
+
+const LogoMark = () => (
+  <svg width="32" height="32" viewBox="0 0 40 40" fill="none" className="shrink-0">
+    <circle cx="20" cy="20" r="6" className="fill-zinc-900 dark:fill-zinc-50" />
+    <path d="M20 5C11.7157 5 5 11.7157 5 20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-amber-500" />
+    <path d="M35 20C35 28.2843 28.2843 35 20 35" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-zinc-400 dark:text-zinc-600" />
+    <circle cx="20" cy="5" r="2.5" className="fill-amber-500" />
+    <circle cx="35" cy="20" r="2.5" className="fill-zinc-400 dark:fill-zinc-600" />
+    <circle cx="20" cy="35" r="2.5" className="fill-zinc-400 dark:fill-zinc-600" />
+    <circle cx="5" cy="20" r="2.5" className="fill-amber-500" />
+  </svg>
+);
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 transition-colors duration-300 pt-16 pb-8 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+        <footer className="bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 transition-colors duration-300 pt-20 pb-10">
+            <div className="container-custom">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-20">
                     
                     {/* Brand & About Section */}
-                    <div className="lg:col-span-2">
-                        <Link to="/" className="flex items-center gap-3 outline-none focus:outline-none mb-6">
-                            {/* Matching Logo SVG */}
-                            <svg width="32" height="32" viewBox="0 0 40 40" fill="none" className="shrink-0 outline-none">
-                                <defs>
-                                    <linearGradient id="brandGradientFooter" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                                        <stop stopColor="#0ea5e9" />
-                                        <stop offset="1" stopColor="#0284c7" />
-                                    </linearGradient>
-                                </defs>
-                                <path d="M20 5C11.7157 5 5 11.7157 5 20" stroke="url(#brandGradientFooter)" strokeWidth="3" strokeLinecap="round" />
-                                <path d="M35 20C35 28.2843 28.2843 35 20 35" stroke="url(#brandGradientFooter)" strokeWidth="3" strokeLinecap="round" />
-                                <circle cx="20" cy="20" r="6" fill="url(#brandGradientFooter)" />
-                                <circle cx="20" cy="5" r="2.5" fill="#0ea5e9" />
-                                <circle cx="35" cy="20" r="2.5" fill="#0284c7" />
-                                <circle cx="20" cy="35" r="2.5" fill="#0ea5e9" />
-                                <circle cx="5" cy="20" r="2.5" fill="#0284c7" />
-                            </svg>
-                            <span className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight transition-colors">
+                    <div className="lg:col-span-4">
+                        <Link to="/" className="flex items-center gap-3 mb-8 group">
+                            <LogoMark />
+                            <span className="text-2xl font-black text-zinc-900 dark:text-white tracking-tighter">
                                 LendSphere
                             </span>
                         </Link>
-                        <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed max-w-sm mb-8">
-                            The world's leading peer-to-peer lending marketplace. Rent everyday items, save money, and earn by sharing your gear securely.
+                        <p className="text-zinc-500 dark:text-zinc-400 text-lg leading-relaxed mb-8 font-medium">
+                            Empowering communities through shared ownership. Rent what you need, earn from what you have.
                         </p>
                         
-                        {/* Contact Info */}
-                        <div className="space-y-3">
-                            <div className="flex items-center text-sm text-zinc-600 dark:text-zinc-400">
-                                <Mail className="w-4 h-4 mr-3 text-zinc-400" />
-                                support@lendsphere.com
-                            </div>
-                            <div className="flex items-center text-sm text-zinc-600 dark:text-zinc-400">
-                                <MapPin className="w-4 h-4 mr-3 text-zinc-400" />
-                                Mumbai, Maharashtra, India
-                            </div>
+                        <div className="flex gap-4">
+                            {[Twitter, Instagram, Facebook, Github].map((Icon, idx) => (
+                                <a key={idx} href="#" className="w-10 h-10 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all">
+                                    <Icon className="w-5 h-5" />
+                                </a>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Quick Links: Marketplace */}
-                    <div>
-                        <h4 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6">Marketplace</h4>
-                        <ul className="space-y-4 text-sm text-zinc-500 dark:text-zinc-400">
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">All Categories</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Electronics</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Furniture</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Vehicles</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Tools</Link></li>
+                    {/* Quick Links */}
+                    <div className="lg:col-span-2">
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-zinc-50 mb-8">Marketplace</h4>
+                        <ul className="space-y-4">
+                            {['Electronics', 'Furniture', 'Vehicles', 'Fitness', 'Tools'].map((item) => (
+                                <li key={item}>
+                                    <Link to={`/?category=${item}`} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 font-medium transition-colors">
+                                        {item}
+                                    </Link>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Quick Links: Support */}
-                    <div>
-                        <h4 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6">Support</h4>
-                        <ul className="space-y-4 text-sm text-zinc-500 dark:text-zinc-400">
-                            <li><Link to="/disputes" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Resolution Center</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Trust & Safety</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Renter Guarantee</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Lender Protection</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Help Center</Link></li>
+                    <div className="lg:col-span-2">
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-zinc-50 mb-8">Support</h4>
+                        <ul className="space-y-4">
+                            {['Help Center', 'Safety Guide', 'Lender Protection', 'Renter Guarantee', 'Disputes'].map((item) => (
+                                <li key={item}>
+                                    <Link to="/" className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 font-medium transition-colors">
+                                        {item}
+                                    </Link>
+                                </li>
+                            ))}
                         </ul>
                     </div>
 
-                    {/* Quick Links: Company */}
-                    <div>
-                        <h4 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6">Company</h4>
-                        <ul className="space-y-4 text-sm text-zinc-500 dark:text-zinc-400">
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About Us</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Careers</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms of Service</Link></li>
-                            <li><Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
-                        </ul>
+                    {/* Newsletter / Contact */}
+                    <div className="lg:col-span-4">
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-zinc-50 mb-8">Stay Connected</h4>
+                        <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6 font-medium">
+                            Subscribe to our newsletter for the latest updates and featured gear.
+                        </p>
+                        <form className="relative group">
+                            <input 
+                                type="email" 
+                                placeholder="Email Address" 
+                                className="input-modern pr-12 bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 focus:bg-white dark:focus:bg-zinc-950"
+                            />
+                            <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-900 dark:bg-zinc-50 rounded-lg flex items-center justify-center text-white dark:text-zinc-900 group-hover:scale-110 transition-transform">
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </form>
                     </div>
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
-                        &copy; {currentYear} LendSphere. Built with ❤️ for Mumbai.
+                <div className="pt-10 border-t border-zinc-100 dark:border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <p className="text-sm text-zinc-400 font-bold">
+                        &copy; {currentYear} LendSphere Inc. <span className="mx-2 text-zinc-200 dark:text-zinc-800">•</span> Built with ❤️ for Mumbai
                     </p>
-
-                    {/* Social Icons */}
-                    <div className="flex gap-3">
-                        <a href="#" className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-colors">
-                            <Twitter className="w-4 h-4" />
-                        </a>
-                        <a href="#" className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:bg-pink-100 hover:text-pink-600 dark:hover:bg-pink-900/30 dark:hover:text-pink-400 transition-colors">
-                            <Instagram className="w-4 h-4" />
-                        </a>
-                        <a href="#" className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-500 transition-colors">
-                            <Facebook className="w-4 h-4" />
-                        </a>
-                        <a href="#" className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 transition-colors">
-                            <Github className="w-4 h-4" />
-                        </a>
+                    <div className="flex gap-8 text-xs font-black uppercase tracking-widest text-zinc-400">
+                        <Link to="/" className="hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Privacy</Link>
+                        <Link to="/" className="hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Terms</Link>
+                        <Link to="/" className="hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Cookies</Link>
                     </div>
                 </div>
             </div>

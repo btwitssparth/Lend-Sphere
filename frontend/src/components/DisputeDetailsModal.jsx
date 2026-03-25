@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    X, AlertTriangle, Calendar, User, DollarSign, Image as ImageIcon, 
+    X, AlertTriangle, Calendar, User, IndianRupee, Image as ImageIcon, 
     CheckCircle, XCircle, MessageSquare, Gavel, Scale, ExternalLink 
 } from 'lucide-react';
 import { Button } from './Ui/Button';
@@ -91,7 +91,7 @@ const DisputeDetailsModal = ({ isOpen, onClose, dispute, isRenterView, isAdmin, 
                         <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-100 dark:border-zinc-800">
                             <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Claim Amount</span>
                             <span className="text-zinc-900 dark:text-zinc-100 font-bold flex items-center gap-1">
-                                <DollarSign className="w-4 h-4 text-green-500" /> ₹{dispute.claimAmount}
+                                <IndianRupee className="w-4 h-4 text-green-500" /> {dispute.claimAmount}
                             </span>
                         </div>
                         <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-100 dark:border-zinc-800">

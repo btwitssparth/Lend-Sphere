@@ -13,17 +13,18 @@ const addProduct = asyncHandler(async(req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    const imageLocalPaths = req.files?.map(file => file.path);
-    if(!imageLocalPaths || imageLocalPaths.length === 0){
+    if (!req.files || req.files.length === 0) {
         throw new ApiError(400, "At least one product image is required");
     }
+
+    const imageLocalPaths = req.files.map(file => file.path);
 
     const uploadPromises = imageLocalPaths.map(path => uploadOnCloudinary(path));
     const uploadedImages = await Promise.all(uploadPromises);
 
     const productImages = uploadedImages
         .filter(image => image !== null)
-        .map(image => image.url);
+        .map(image => image.secure_url || image.url);
 
     if(productImages.length === 0){
         throw new ApiError(500, "Failed to upload product images");
@@ -119,7 +120,7 @@ const updateProduct = asyncHandler(async(req,res)=>{
         
         const newImages = uploadedImages
             .filter(image => image !== null)
-            .map(image => image.url);
+            .map(image => image.secure_url || image.url);
 
         if(newImages.length > 0){
             product.productImages = newImages;

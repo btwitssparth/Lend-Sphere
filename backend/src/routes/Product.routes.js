@@ -23,16 +23,10 @@ router.route("/my-listings").get(getMyListings);
 
 // 🔥 FIXED: Now routing to addProduct
 router.route("/")
-    .post(upload.fields([
-        { name: "productImage", maxCount: 1 },
-        { name: "productImages", maxCount: 4 }
-    ]), addProduct);
+    .post(upload.array("productImages", 5), addProduct);
 
 router.route("/:id")
-    .put(upload.fields([
-        { name: "productImage", maxCount: 1 },
-        { name: "productImages", maxCount: 4 }
-    ]), updateProduct)
+    .put(upload.array("productImages", 5), updateProduct)
     .delete(deleteProduct);
 
 export default router;

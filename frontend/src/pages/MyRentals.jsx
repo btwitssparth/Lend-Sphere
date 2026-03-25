@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { getMyRentals } from '../api/rentals';
 import { addReview } from '../api/reviews';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Calendar, DollarSign, MessageCircle, Star, X } from 'lucide-react';
-import { Button } from '../components/Ui/Button';
+import { Package, Calendar, IndianRupee, MessageCircle, Star, X, ArrowLeft, ChevronRight, Clock, ShieldCheck, MapPin } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import ChatBox from '../components/Chat/Chatbox';
+import toast from 'react-hot-toast';
 
 const MyRentals = () => {
     const [rentals, setRentals] = useState([]);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     // Chat State
     const [isChatOpen, setIsChatOpen] = useState(false);
@@ -28,6 +30,7 @@ const MyRentals = () => {
             setRentals(response.data.data);
         } catch (error) {
             console.error("Error fetching my rentals:", error);
+            toast.error("Failed to load rentals");
         } finally {
             setLoading(false);
         }
@@ -55,11 +58,11 @@ const MyRentals = () => {
         setReviewLoading(true);
         try {
             await addReview({ rentalId: reviewRentalId, rating, comment });
-            alert("✅ Review submitted successfully!");
+            toast.success("Review submitted successfully!");
             setIsReviewOpen(false);
-            fetchRentals(); // Refresh the list to hide the button
+            fetchRentals(); 
         } catch (error) {
-            alert(error.response?.data?.message || "Failed to submit review");
+            toast.error(error.response?.data?.message || "Failed to submit review");
         } finally {
             setReviewLoading(false);
         }
@@ -67,108 +70,123 @@ const MyRentals = () => {
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center pt-20 bg-white dark:bg-zinc-950 transition-colors">
-            <div className="w-8 h-8 border-4 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin"></div>
         </div>
     );
 
     return (
-        <div className="min-h-screen pt-28 pb-12 px-4 bg-white dark:bg-zinc-950 transition-colors duration-300">
-            <div className="max-w-4xl mx-auto">
-                
-                <div className="mb-10">
-                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                        <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">My Rentals</h1>
-                        <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Track the status of items you've requested to rent.</p>
-                    </motion.div>
+        <div className="min-h-screen pt-32 pb-20 bg-white dark:bg-zinc-950 transition-colors duration-300">
+            <div className="container-custom max-w-5xl">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+                    <div>
+                        <button onClick={() => navigate('/')} className="btn-ghost pl-0 mb-4 group">
+                            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> Back to Explore
+                        </button>
+                        <h1 className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+                            My Rentals
+                        </h1>
+                        <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium mt-1">
+                            Manage your rental requests and active bookings.
+                        </p>
+                    </div>
                 </div>
 
                 {rentals.length === 0 ? (
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }} 
                         animate={{ opacity: 1, scale: 1 }}
-                        className="text-center py-24 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 transition-colors"
+                        className="text-center py-32 bg-zinc-50 dark:bg-zinc-900/50 rounded-[40px] border border-dashed border-zinc-200 dark:border-zinc-800 transition-colors"
                     >
-                        <div className="w-16 h-16 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm transform rotate-3">
-                            <Package className="w-8 h-8" />
+                        <div className="w-20 h-20 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-300 dark:text-zinc-700 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm transform -rotate-6">
+                            <Package className="w-10 h-10" />
                         </div>
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">No rentals yet</h3>
-                        <p className="text-zinc-500 dark:text-zinc-400">Start exploring products to borrow gear.</p>
+                        <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 mb-2">No rentals yet</h3>
+                        <p className="text-zinc-500 dark:text-zinc-400 mb-8 font-medium">Start exploring products to borrow gear from your community.</p>
+                        <Link to="/" className="btn-primary">
+                            Browse Products
+                        </Link>
                     </motion.div>
                 ) : (
-                    <div className="space-y-4">
-                        {rentals.map((rental, index) => (
+                    <div className="grid gap-6">
+                        {rentals.map((rental, idx) => (
                             <motion.div 
                                 key={rental._id} 
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="bg-white dark:bg-zinc-900 p-5 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row gap-6 items-center hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-200"
+                                transition={{ delay: idx * 0.05 }}
+                                className="p-6 md:p-8 rounded-[32px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 transition-all group"
                             >
-                                <div className="w-24 h-24 sm:w-28 sm:h-28 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex-shrink-0">
-                                    <img 
-                                        src={rental.product?.productImages?.[0] || rental.product?.productImage || '/default-placeholder.png'} 
-                                        alt={rental.product?.name} 
-                                        className="w-full h-full object-cover" 
-                                    />
-                                </div>
-                                
-                                <div className="flex-1 w-full flex flex-col sm:flex-row justify-between gap-4">
-                                    <div className="flex-1">
-                                        <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 mb-3 line-clamp-1">{rental.product?.name}</h3>
-                                        
-                                        <div className="space-y-2">
-                                            <div className="flex items-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                                                <Calendar className="w-4 h-4 mr-2" />
-                                                {new Date(rental.startDate).toLocaleDateString()} to {new Date(rental.endDate).toLocaleDateString()}
-                                            </div>
-                                            <div className="flex items-center text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                                                <DollarSign className="w-4 h-4 mr-2 text-zinc-400" />
-                                                Total: ₹{rental.totalPrice}
-                                            </div>
-                                        </div>
+                                <div className="flex flex-col md:flex-row gap-8">
+                                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 shrink-0">
+                                        <img 
+                                            src={rental.product?.productImages?.[0] || rental.product?.productImage || '/default-placeholder.png'} 
+                                            alt="" 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                        />
                                     </div>
                                     
-                                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0 border-t sm:border-t-0 sm:border-l border-zinc-100 dark:border-zinc-800 pt-4 sm:pt-0 sm:pl-6 w-full sm:w-auto">
-                                        
-                                        <span className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider whitespace-nowrap border ${
-                                            rental.status === 'Approved' || rental.status === 'Active' ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100' : 
-                                            rental.status === 'Completed' ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800' :
-                                            rental.status === 'Rejected' || rental.status === 'Cancelled' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50' :
-                                            'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
-                                        }`}>
-                                            {rental.status}
-                                        </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight truncate">{rental.product?.name}</h3>
+                                                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
+                                                        rental.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                                        rental.status === 'Approved' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                                                        rental.status === 'Active' ? 'bg-green-50 text-green-600 border-green-200' :
+                                                        rental.status === 'Completed' ? 'bg-zinc-50 text-zinc-600 border-zinc-200' :
+                                                        'bg-red-50 text-red-600 border-red-200'
+                                                    }`}>
+                                                        {rental.status}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                                    <div className="flex items-center text-sm font-medium text-zinc-500">
+                                                        <Calendar className="w-4 h-4 mr-2 text-zinc-400" />
+                                                        {new Date(rental.startDate).toLocaleDateString()} — {new Date(rental.endDate).toLocaleDateString()}
+                                                    </div>
+                                                    <div className="flex items-center text-sm font-medium text-zinc-500">
+                                                        <Clock className="w-4 h-4 mr-2 text-zinc-400" />
+                                                        {Math.ceil(Math.abs(new Date(rental.endDate) - new Date(rental.startDate)) / (1000 * 60 * 60 * 24)) || 1} Days
+                                                    </div>
+                                                    <div className="flex items-center text-sm font-medium text-zinc-500">
+                                                        <MapPin className="w-4 h-4 mr-2 text-zinc-400" />
+                                                        {rental.renterAddress}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Total Cost</p>
+                                                <p className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">₹{rental.totalPrice}</p>
+                                            </div>
+                                        </div>
 
-                                        <div className="flex gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap justify-end">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                onClick={() => openChat(rental)}
-                                                className="flex-1 sm:flex-none"
-                                            >
-                                                <MessageCircle className="w-4 h-4 sm:mr-2" />
-                                                <span className="hidden sm:inline">Message</span>
-                                            </Button>
-
-                                            {/* Show Review Button ONLY if Completed and NOT Reviewed */}
+                                        <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                                            <button onClick={() => openChat(rental)} className="btn-secondary py-2 text-sm">
+                                                <MessageCircle className="w-4 h-4 mr-2" /> Message Lender
+                                            </button>
+                                            
                                             {rental.status === 'Completed' && !rental.isReviewed && (
-                                                <Button 
+                                                <button 
                                                     onClick={() => openReviewModal(rental._id)}
-                                                    size="sm" 
-                                                    className="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-white border-none shadow-md shadow-amber-500/20"
+                                                    className="btn-primary py-2 text-sm bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-600"
                                                 >
-                                                    <Star className="w-4 h-4 sm:mr-1 fill-white" />
-                                                    <span className="hidden sm:inline">Review</span>
-                                                </Button>
+                                                    <Star className="w-4 h-4 mr-2 fill-white" /> Rate Experience
+                                                </button>
                                             )}
 
-                                            {/* Show Static Rating if ALREADY Reviewed */}
                                             {rental.isReviewed && rental.review && (
-                                                <div className="flex items-center px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 rounded-md text-xs font-bold border border-amber-200 dark:border-amber-900/50 shrink-0">
-                                                    <Star className="w-3 h-3 mr-1 fill-amber-500 text-amber-500" />
-                                                    Rated {rental.review.rating} Stars
+                                                <div className="flex items-center px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-black border border-amber-100 dark:border-amber-800/50">
+                                                    <Star className="w-4 h-4 mr-2 fill-current" />
+                                                    You rated {rental.review.rating}/5
                                                 </div>
                                             )}
+
+                                            <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 ml-auto">
+                                                <ShieldCheck className="w-4 h-4 text-zinc-300" />
+                                                Protected by LendSphere
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -185,61 +203,63 @@ const MyRentals = () => {
                 rentalStatus={activeRentalStatus}
             />
 
-            {/* The Review Modal */}
+            {/* Review Modal */}
             <AnimatePresence>
                 {isReviewOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-md">
                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                            className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-[40px] shadow-2xl w-full max-w-md overflow-hidden"
                         >
-                            <div className="flex justify-between items-center p-5 border-b border-zinc-200 dark:border-zinc-800">
-                                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">Rate your experience</h3>
-                                <button onClick={() => setIsReviewOpen(false)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
-                                    <X className="w-5 h-5" />
+                            <div className="p-8 pb-0 flex justify-between items-start">
+                                <div>
+                                    <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">How was it?</h3>
+                                    <p className="text-zinc-500 dark:text-zinc-400 font-medium mt-1">Your feedback helps the community.</p>
+                                </div>
+                                <button onClick={() => setIsReviewOpen(false)} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors">
+                                    <X className="w-6 h-6 text-zinc-400" />
                                 </button>
                             </div>
                             
-                            <form onSubmit={submitReview} className="p-6 space-y-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-3 text-center">How was the gear?</label>
-                                    <div className="flex justify-center gap-2">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <button
-                                                key={star}
-                                                type="button"
-                                                onClick={() => setRating(star)}
-                                                className="focus:outline-none hover:scale-110 transition-transform"
-                                            >
-                                                <Star 
-                                                    className={`w-10 h-10 ${rating >= star ? 'text-amber-400 fill-amber-400' : 'text-zinc-300 dark:text-zinc-700'}`} 
-                                                />
-                                            </button>
-                                        ))}
-                                    </div>
+                            <form onSubmit={submitReview} className="p-8 space-y-8">
+                                <div className="flex justify-center gap-3">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setRating(star)}
+                                            className="focus:outline-none transition-transform active:scale-90"
+                                        >
+                                            <Star 
+                                                className={`w-10 h-10 transition-colors ${rating >= star ? 'text-amber-400 fill-amber-400' : 'text-zinc-200 dark:text-zinc-800'}`} 
+                                            />
+                                        </button>
+                                    ))}
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2">Leave a comment</label>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Your Comment</label>
                                     <textarea 
                                         required
                                         rows={4}
                                         value={comment}
                                         onChange={(e) => setComment(e.target.value)}
-                                        placeholder="Tell others about your experience..."
-                                        className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-zinc-50 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all resize-none"
+                                        placeholder="Describe your experience with the item and the lender..."
+                                        className="input-modern min-h-[120px] py-4 resize-none"
                                     />
                                 </div>
 
-                                <Button 
+                                <button 
                                     type="submit" 
                                     disabled={reviewLoading} 
-                                    className="w-full py-3 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-white border-none"
+                                    className="btn-primary w-full py-4 text-lg font-black"
                                 >
-                                    {reviewLoading ? "Submitting..." : "Submit Review"}
-                                </Button>
+                                    {reviewLoading ? (
+                                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                                    ) : "Submit Review"}
+                                </button>
                             </form>
                         </motion.div>
                     </div>

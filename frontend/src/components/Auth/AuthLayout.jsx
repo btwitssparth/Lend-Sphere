@@ -1,104 +1,106 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Shield, Zap, Globe, Heart } from 'lucide-react';
 
 export const AuthLayout = ({ children, isLogin }) => {
-  const transition = { type: "spring", stiffness: 70, damping: 15, mass: 1 };
+  const transition = { type: "spring", stiffness: 100, damping: 20, mass: 1 };
 
-  const BrandLogo = () => (
-    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="text-brand-600">
-      <defs>
-        <linearGradient id="brandGradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#0ea5e9" />
-          <stop offset="1" stopColor="#0284c7" />
-        </linearGradient>
-      </defs>
-      <circle cx="20" cy="20" r="18" stroke="url(#brandGradient)" strokeWidth="3" className="opacity-20" />
-      <path d="M20 5C11.7157 5 5 11.7157 5 20" stroke="url(#brandGradient)" strokeWidth="3" strokeLinecap="round" />
-      <path d="M35 20C35 28.2843 28.2843 35 20 35" stroke="url(#brandGradient)" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="20" cy="20" r="6" fill="url(#brandGradient)" />
-      <circle cx="20" cy="5" r="2.5" fill="#0ea5e9" />
-      <circle cx="35" cy="20" r="2.5" fill="#0284c7" />
-      <circle cx="20" cy="35" r="2.5" fill="#0ea5e9" />
-      <circle cx="5" cy="20" r="2.5" fill="#0284c7" />
+  const BrandLogo = ({ isDarkBg = false }) => (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="shrink-0">
+      <circle cx="20" cy="20" r="6" className={isDarkBg ? "fill-white" : "fill-zinc-900 dark:fill-zinc-50"} />
+      <path d="M20 5C11.7157 5 5 11.7157 5 20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-amber-500" />
+      <path d="M35 20C35 28.2843 28.2843 35 20 35" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className={isDarkBg ? "text-zinc-400" : "text-zinc-400 dark:text-zinc-600"} />
+      <circle cx="20" cy="5" r="2.5" className="fill-amber-500" />
+      <circle cx="35" cy="20" r="2.5" className={isDarkBg ? "fill-zinc-400" : "fill-zinc-400 dark:fill-zinc-600"} />
+      <circle cx="20" cy="35" r="2.5" className={isDarkBg ? "fill-zinc-400" : "fill-zinc-400 dark:fill-zinc-600"} />
+      <circle cx="5" cy="20" r="2.5" className="fill-amber-500" />
     </svg>
   );
 
   const SidePanelContent = () => (
-    <div className="relative w-full h-full bg-slate-900 overflow-hidden">
+    <div className="relative w-full h-full bg-zinc-900 overflow-hidden">
         <div className="absolute inset-0">
           <img
-              className="w-full h-full object-cover opacity-60"
-              src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop" 
-              alt="LendSphere Network"
+              className="w-full h-full object-cover opacity-40 grayscale"
+              src="https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2074&auto=format&fit=crop" 
+              alt="LendSphere Marketplace"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-slate-900/10" />
-        <div className="absolute bottom-0 left-0 right-0 p-12 xl:p-16 z-20">
+        <div className="absolute inset-0 bg-zinc-950/60" />
+        
+        <div className="absolute inset-0 p-12 xl:p-20 flex flex-col justify-between z-20">
+            <div className="flex items-center gap-3">
+                <BrandLogo isDarkBg={true} />
+                <span className="text-2xl font-black tracking-tighter text-white">LendSphere</span>
+            </div>
+
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
             >
-                <h3 className="text-3xl font-bold text-white mb-4">
-                  The World's Lending Marketplace
+                <h3 className="text-4xl xl:text-5xl font-black text-white mb-6 leading-tight tracking-tight">
+                  Join the Future of <br />
+                  <span className="text-zinc-500">Shared Ownership.</span>
                 </h3>
-                <p className="text-slate-300 text-lg leading-relaxed max-w-md">
-                  Experience the freedom of access over ownership. 
-                  Connect with a global community to rent, lend, and secure your assets effortlessly.
-                </p>
+                
+                <div className="grid grid-cols-1 gap-6 mt-12">
+                  {[
+                    { icon: Shield, text: "Secure Peer-to-Peer Transactions" },
+                    { icon: Zap, text: "Instant Access to Premium Gear" },
+                    { icon: Heart, text: "Sustainable Community Sharing" }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-4 group">
+                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                        <item.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <p className="text-zinc-300 font-medium text-lg">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
             </motion.div>
-        </div>
-    </div>
-  );
 
-  const LogoAndFooter = ({ content }) => (
-    <div className="w-full max-w-sm mx-auto flex flex-col h-full justify-center py-12">
-        <div className="flex items-center gap-3 mb-12">
-            <BrandLogo />
-            <span className="text-2xl font-bold tracking-tight text-slate-900">LendSphere</span>
-        </div>
-        
-        <div className="flex-1 flex flex-col justify-center">
-            {content}
-        </div>
-
-        <div className="mt-8 flex justify-between items-center text-xs text-slate-400">
-            <p>&copy; 2026 LendSphere Inc.</p>
-            <div className="flex gap-4">
-                <a href="#" className="hover:text-slate-600 transition-colors">Privacy</a>
-                <a href="#" className="hover:text-slate-600 transition-colors">Terms</a>
+            <div className="text-zinc-500 text-sm font-medium">
+              &copy; 2026 LendSphere Inc. All rights reserved.
             </div>
         </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden relative font-sans">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 overflow-hidden relative font-sans">
       {/* Mobile View */}
       <div className="lg:hidden min-h-screen flex flex-col">
-        <div className="flex-1 bg-white px-6 py-8 flex flex-col justify-center">
-           <LogoAndFooter content={children} />
+        <div className="p-6 flex items-center gap-3">
+            <BrandLogo />
+            <span className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-50">LendSphere</span>
         </div>
-        <div className="h-64 relative overflow-hidden">
-            <SidePanelContent />
+        <div className="flex-1 px-6 py-8 flex flex-col justify-center">
+           <div className="w-full max-w-sm mx-auto">
+              {children}
+           </div>
         </div>
       </div>
 
       {/* Desktop View */}
       <div className="hidden lg:block absolute inset-0 w-full h-full">
+          {/* Form Side */}
           <motion.div
-            className="absolute top-0 bottom-0 w-1/2 bg-white z-10 flex flex-col px-12 xl:px-24"
+            className="absolute top-0 bottom-0 w-1/2 bg-white dark:bg-zinc-950 z-10 flex flex-col justify-center px-12 xl:px-32"
             initial={false}
             animate={{ x: isLogin ? "0%" : "100%" }}
             transition={transition}
           >
-             <LogoAndFooter content={children} />
+             <div className="w-full max-w-md mx-auto">
+                {children}
+             </div>
           </motion.div>
 
+          {/* Visual Side */}
           <motion.div
-            className="absolute top-0 bottom-0 right-0 w-1/2 bg-slate-900 z-20 overflow-hidden"
+            className="absolute top-0 bottom-0 w-1/2 z-20 overflow-hidden"
             initial={false}
-            animate={{ x: isLogin ? "0%" : "-100%" }}
+            animate={{ x: isLogin ? "100%" : "0%" }}
             transition={transition}
           >
              <SidePanelContent />

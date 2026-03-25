@@ -56,7 +56,23 @@ const ChatBox = ({ rentalId, isOpen, onClose, rentalStatus }) => {
         });
 
         socketRef.current.on("receive_message", (message) => {
-            setMessages((prev) => [...prev, message]);
+            setMessages((prev) => {
+                // Check if message already exists by ID
+                if (prev.some(m => m._id === message._id)) return prev;
+                
+                // Check if it's a message from the current user that matches an optimistic one
+                // This handles the case where the socket message arrives before the API call returns
+                const senderId = message.sender?._id || message.sender;
+                if (senderId === user?._id) {
+                    const optimisticMatch = prev.find(m => m.isOptimistic && m.text === message.text);
+                    if (optimisticMatch) {
+                        // Replace optimistic with the real one
+                        return prev.map(m => m._id === optimisticMatch._id ? message : m);
+                    }
+                }
+                
+                return [...prev, message];
+            });
         });
 
         return () => {
@@ -70,13 +86,39 @@ const ChatBox = ({ rentalId, isOpen, onClose, rentalStatus }) => {
         e.preventDefault();
         if (!newMessage.trim() || isLocked) return;
 
-        const textObj = newMessage.trim();
+        const text = newMessage.trim();
         setNewMessage(""); 
 
+        // 🔥 OPTIMISTIC UPDATE: Create a temporary message object to show instantly
+        const tempId = Date.now().toString();
+        const optimisticMsg = {
+            _id: tempId,
+            sender: user?._id,
+            text,
+            isOptimistic: true, // Tag it so we can style it if we want
+            createdAt: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, optimisticMsg]);
+
         try {
-            await sendMessage(rentalId, textObj);
+            const res = await sendMessage(rentalId, text);
+            const actualMsg = res.data.data;
+            
+            // Replace the optimistic message with the actual one from server
+            setMessages(prev => {
+                // If the socket already replaced the optimistic message or added this one
+                if (prev.some(m => m._id === actualMsg._id)) {
+                    // Just make sure to remove the tempId if it's still there
+                    return prev.filter(m => m._id !== tempId);
+                }
+                // Replace tempId with actualMsg
+                return prev.map(m => m._id === tempId ? actualMsg : m);
+            });
         } catch (error) {
             console.error("Failed to send message", error);
+            // Remove the optimistic message if it failed
+            setMessages(prev => prev.filter(m => m._id !== tempId));
             alert(error.response?.data?.message || "Failed to send message.");
         }
     };
@@ -120,9 +162,10 @@ const ChatBox = ({ rentalId, isOpen, onClose, rentalStatus }) => {
                         </div>
                     ) : (
                         messages.map((msg, idx) => {
-                            const isMe = msg.sender === user?._id;
+                            const senderId = msg.sender?._id || msg.sender;
+                            const isMe = senderId === user?._id;
                             return (
-                                <div key={msg._id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                <div key={msg._id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${msg.isOptimistic ? 'opacity-70' : ''}`}>
                                     <div 
                                         className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
                                             isMe 

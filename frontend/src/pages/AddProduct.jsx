@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { addProduct } from '../api/products';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Upload, DollarSign, MapPin, Type, AlignLeft, Tag, Loader2, Navigation, Layers } from 'lucide-react'; // 🔥 Added Layers icon
-import { Button } from '../components/Ui/Button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Upload, IndianRupee, MapPin, Type, AlignLeft, Tag, 
+    Loader2, Navigation, Layers, ArrowLeft, X, CheckCircle2,
+    Info, Plus
+} from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const AddProduct = () => {
     const navigate = useNavigate();
@@ -16,7 +20,7 @@ const AddProduct = () => {
         category: '',
         pricePerDay: '',
         location: '',
-        quantity: '1', // 🔥 Default Quantity
+        quantity: '1',
         latitude: '', 
         longitude: '' 
     });
@@ -27,23 +31,41 @@ const AddProduct = () => {
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files); 
+        const currentFiles = formData.productImages || [];
         
-        if (files.length > 5) {
-            alert("You can only upload up to 5 images.");
+        if (currentFiles.length + files.length > 5) {
+            toast.error("You can only upload up to 5 images in total.");
             return;
         }
 
-        setFormData({ ...formData, productImages: files });
+        const newFiles = [...currentFiles, ...files];
+        setFormData({ ...formData, productImages: newFiles });
         
-        const newPreviews = files.map(file => URL.createObjectURL(file));
+        const newPreviews = newFiles.map(file => {
+            if (typeof file === 'string') return file; // If somehow we have a string URL
+            return URL.createObjectURL(file);
+        });
         setPreviews(newPreviews);
+    };
+
+    const removeImage = (index) => {
+        const newPreviews = [...previews];
+        newPreviews.splice(index, 1);
+        setPreviews(newPreviews);
+
+        const newFiles = [...formData.productImages];
+        newFiles.splice(index, 1);
+        setFormData({ ...formData, productImages: newFiles });
     };
 
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser");
+            toast.error("Geolocation is not supported by your browser");
             return;
         }
+        
+        const toastId = toast.loading("Getting your location...");
+        
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 setFormData({
@@ -52,17 +74,23 @@ const AddProduct = () => {
                     longitude: position.coords.longitude,
                     location: "Current Location" 
                 });
+                toast.success("Location updated!", { id: toastId });
             },
             () => {
-                alert("Unable to retrieve your location. Please check your browser permissions.");
+                toast.error("Unable to retrieve location. Please check permissions.", { id: toastId });
             }
         );
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
+        
+        if (!formData.productImages || formData.productImages.length === 0) {
+            toast.error("Please upload at least one image");
+            return;
+        }
 
+        setLoading(true);
         const data = new FormData();
         
         Object.keys(formData).forEach(key => {
@@ -71,211 +99,245 @@ const AddProduct = () => {
             }
         });
 
-        if(formData.productImages) {
-            formData.productImages.forEach(file => {
-                data.append('productImages', file);
-            });
-        }
+        formData.productImages.forEach(file => {
+            data.append('productImages', file);
+        });
 
         try {
             await addProduct(data);
+            toast.success("Item listed successfully!");
             navigate('/');
         } catch (error) {
             console.error("Upload Error: ", error);
-            alert("Failed to add product");
+            toast.error("Failed to add product");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen pt-28 pb-12 px-4 flex justify-center dark:bg-black transition-colors duration-300">
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-2xl"
-            >
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">List an Item</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-2 transition-colors">Share your gear with the world and earn.</p>
-                </div>
+        <div className="min-h-screen pt-32 pb-20 bg-white dark:bg-zinc-950 transition-colors duration-300">
+            <div className="container-custom max-w-4xl">
+                <button onClick={() => navigate(-1)} className="btn-ghost pl-0 mb-8 group">
+                    <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> Back
+                </button>
 
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl border border-slate-100 dark:border-zinc-800 overflow-hidden transition-colors">
-                    <form onSubmit={handleSubmit} className="p-8 space-y-8">
-                        
-                        {/* Image Upload Section */}
-                        <div className="space-y-4">
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">Item Photos (Up to 5)</label>
-                            <div className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${previews.length > 0 ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-zinc-700 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-zinc-800'}`}>
-                                <input 
-                                    type="file" 
-                                    multiple
-                                    accept="image/*"
-                                    onChange={handleFileChange} 
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                    required={previews.length === 0} 
-                                />
-                                
-                                {previews.length > 0 ? (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-20 pointer-events-none">
-                                        {previews.map((src, index) => (
-                                            <div key={index} className="relative h-32 w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 transition-colors">
-                                                <img src={src} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2 py-8 relative z-0">
-                                        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
-                                            <Upload className="w-8 h-8" />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    {/* Left Side: Header & Tips */}
+                    <div className="lg:col-span-4 space-y-8">
+                        <div>
+                            <h1 className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+                                List your <br />
+                                <span className="text-zinc-400 dark:text-zinc-600">Product.</span>
+                            </h1>
+                            <p className="text-lg text-zinc-500 dark:text-zinc-400 font-medium mt-4">
+                                Join our community of lenders and start earning from your gear today.
+                            </p>
+                        </div>
+
+                        <div className="p-6 rounded-[32px] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 space-y-6">
+                            <h3 className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                                <Info className="w-4 h-4 text-blue-500" /> Pro Tips
+                            </h3>
+                            <ul className="space-y-4">
+                                {[
+                                    "Use clear, bright photos from multiple angles.",
+                                    "Write a detailed description including accessories.",
+                                    "Be responsive to rental requests to earn trust.",
+                                    "Set a fair price compared to similar items."
+                                ].map((tip, idx) => (
+                                    <li key={idx} className="flex gap-3 text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                                        {tip}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Right Side: Form */}
+                    <div className="lg:col-span-8">
+                        <form onSubmit={handleSubmit} className="space-y-10">
+                            {/* Image Upload */}
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Product Images</label>
+                                <div className={`relative border-2 border-dashed rounded-[32px] p-8 transition-all ${
+                                    previews.length > 0 
+                                        ? 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20' 
+                                        : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900/50'
+                                }`}>
+                                    <input 
+                                        type="file" 
+                                        multiple
+                                        accept="image/*"
+                                        onChange={handleFileChange} 
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    
+                                    {previews.length > 0 ? (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                            {previews.map((src, index) => (
+                                                <div key={index} className="relative aspect-square rounded-2xl overflow-hidden group">
+                                                    <img src={src} alt="" className="w-full h-full object-cover" />
+                                                    <button 
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            removeImage(index);
+                                                        }}
+                                                        className="absolute top-2 right-2 w-6 h-6 bg-black/50 backdrop-blur-md text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {previews.length < 5 && (
+                                                <div className="aspect-square rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-center">
+                                                    <Plus className="w-6 h-6 text-zinc-300" />
+                                                </div>
+                                            )}
                                         </div>
-                                        <p className="text-lg font-medium text-slate-700 dark:text-slate-300 transition-colors">Click or drag photos here</p>
-                                        <p className="text-sm text-slate-400 dark:text-slate-500 transition-colors">SVG, PNG, JPG or GIF (max 5 files)</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Basic Info */}
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Title</label>
-                                <div className="relative">
-                                    <Type className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
-                                    <input 
-                                        type="text" 
-                                        name="name" 
-                                        required 
-                                        value={formData.name}
-                                        placeholder="e.g. Sony A7III Camera" 
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                                        onChange={handleChange}
-                                    />
+                                    ) : (
+                                        <div className="text-center py-10">
+                                            <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                                <Upload className="w-8 h-8" />
+                                            </div>
+                                            <p className="text-lg font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Drop your photos here</p>
+                                            <p className="text-sm text-zinc-500 font-medium mt-1">Upload up to 5 high-quality images</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Description</label>
-                                <div className="relative">
-                                    <AlignLeft className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
-                                    <textarea 
-                                        name="description" 
-                                        required 
-                                        value={formData.description}
-                                        rows="4"
-                                        placeholder="Describe the condition, features, and what's included..." 
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Grid Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Category</label>
-                                <div className="relative">
-                                    <Tag className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
-                                    <select 
-                                        name="category" 
-                                        required 
-                                        value={formData.category}
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
-                                        onChange={handleChange}
-                                    >
-                                        <option value="" className="dark:bg-zinc-800">Select Category</option>
-                                        <option value="Electronics" className="dark:bg-zinc-800">Electronics</option>
-                                        <option value="Furniture" className="dark:bg-zinc-800">Furniture</option>
-                                        <option value="Vehicles" className="dark:bg-zinc-800">Vehicles</option>
-                                        <option value="Fitness" className="dark:bg-zinc-800">Fitness</option>
-                                        <option value="Tools" className="dark:bg-zinc-800">Tools</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Price per Day</label>
-                                <div className="relative">
-                                    <DollarSign className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
-                                    <input 
-                                        type="number" 
-                                        name="pricePerDay" 
-                                        required 
-                                        value={formData.pricePerDay}
-                                        placeholder="0.00" 
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* 🔥 NEW: Quantity Input */}
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Quantity (Inventory)</label>
-                                <div className="relative">
-                                    <Layers className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
-                                    <input 
-                                        type="number" 
-                                        name="quantity" 
-                                        required 
-                                        min="1"
-                                        value={formData.quantity}
-                                        placeholder="1" 
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold"
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Location */}
-                            <div className="md:col-span-2 md:col-start-1">
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Location</label>
-                                <div className="flex gap-2">
-                                    <div className="relative flex-1">
-                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
+                            {/* Details Section */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Product Title</label>
+                                    <div className="relative">
+                                        <Type className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
                                         <input 
                                             type="text" 
-                                            name="location" 
+                                            name="name" 
                                             required 
-                                            value={formData.location}
-                                            placeholder="e.g. Mumbai, Bandra West" 
-                                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                            value={formData.name}
+                                            placeholder="What are you lending?" 
+                                            className="input-modern pl-12"
                                             onChange={handleChange}
                                         />
                                     </div>
-                                    <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        onClick={handleGetLocation}
-                                        className="shrink-0 px-4 bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
-                                    >
-                                        <Navigation className="w-5 h-5" />
-                                    </Button>
+                                </div>
+
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Description</label>
+                                    <div className="relative">
+                                        <AlignLeft className="absolute left-4 top-4 w-5 h-5 text-zinc-400" />
+                                        <textarea 
+                                            name="description" 
+                                            required 
+                                            value={formData.description}
+                                            rows="4"
+                                            placeholder="Condition, features, and what's included..." 
+                                            className="input-modern pl-12 min-h-[120px] py-4 resize-none"
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Category</label>
+                                    <div className="relative">
+                                        <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                                        <select 
+                                            name="category" 
+                                            required 
+                                            value={formData.category}
+                                            className="input-modern pl-12 appearance-none cursor-pointer"
+                                            onChange={handleChange}
+                                        >
+                                            <option value="">Select Category</option>
+                                            <option value="Electronics">Electronics</option>
+                                            <option value="Furniture">Furniture</option>
+                                            <option value="Vehicles">Vehicles</option>
+                                            <option value="Fitness">Fitness</option>
+                                            <option value="Tools">Tools</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Price per Day</label>
+                                    <div className="relative">
+                                        <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                                        <input 
+                                            type="number" 
+                                            name="pricePerDay" 
+                                            required 
+                                            value={formData.pricePerDay}
+                                            placeholder="0" 
+                                            className="input-modern pl-12 font-bold"
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Quantity Available</label>
+                                    <div className="relative">
+                                        <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                                        <input 
+                                            type="number" 
+                                            name="quantity" 
+                                            required 
+                                            min="1"
+                                            value={formData.quantity}
+                                            placeholder="1" 
+                                            className="input-modern pl-12 font-bold"
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Location</label>
+                                    <div className="flex gap-3">
+                                        <div className="relative flex-1">
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                                            <input 
+                                                type="text" 
+                                                name="location" 
+                                                required 
+                                                value={formData.location}
+                                                placeholder="e.g. Bandra West, Mumbai" 
+                                                className="input-modern pl-12"
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleGetLocation}
+                                            className="btn-secondary px-4 shrink-0"
+                                        >
+                                            <Navigation className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="pt-4">
-                            <Button 
+                            <button 
                                 type="submit" 
-                                className="w-full py-4 text-lg shadow-xl shadow-blue-600/20"
                                 disabled={loading}
+                                className="btn-primary w-full py-4 text-lg font-black shadow-xl shadow-zinc-200 dark:shadow-none"
                             >
                                 {loading ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Publishing...
-                                    </span>
+                                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
                                 ) : (
-                                    "Publish Listing"
+                                    "List Product Now"
                                 )}
-                            </Button>
-                        </div>
-
-                    </form>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 };

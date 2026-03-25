@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Rental } from "../models/Rental.model.js";
 import { Product } from "../models/Product.model.js";
+import User from "../models/User.model.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
 // 1. Rent a Product (Triggers Email to Lender)
@@ -25,6 +26,13 @@ const rentItem = asyncHandler(async (req, res) => {
 
     const product = await Product.findById(productId).populate('owner');
     if (!product) throw new ApiError(404, "Product not found");
+    
+    // 🔥 NEW: Check if renter has uploaded ID
+    const user = await User.findById(req.user._id);
+    if (!user.hasUploadedID) {
+        throw new ApiError(403, "Please upload your identity proof (Govt ID) before renting an item.");
+    }
+
     if (!product.isAvailable) throw new ApiError(400, "Product is currently not available");
     if (product.owner._id.toString() === req.user._id.toString()) throw new ApiError(400, "You cannot rent your own product");
 
@@ -39,8 +47,21 @@ const rentItem = asyncHandler(async (req, res) => {
     });
 
     const totalInventory = product.quantity || 1; 
-    if (conflictingRentals.length >= totalInventory) {
-        throw new ApiError(409, `All ${totalInventory} units of this item are booked for these dates.`);
+    
+    // Check if any day in the requested range is fully booked
+    let tempDate = new Date(start);
+    while (tempDate <= end) {
+        const currentTime = tempDate.getTime();
+        const overlappingCount = conflictingRentals.filter(r => {
+            const s = new Date(r.startDate).setHours(0, 0, 0, 0);
+            const e = new Date(r.endDate).setHours(0, 0, 0, 0);
+            return currentTime >= s && currentTime <= e;
+        }).length;
+
+        if (overlappingCount >= totalInventory) {
+            throw new ApiError(409, `The item is fully booked for ${tempDate.toLocaleDateString()}. Please choose different dates.`);
+        }
+        tempDate.setDate(tempDate.getDate() + 1);
     }
 
     const timeDiff = end.getTime() - start.getTime();
@@ -159,7 +180,7 @@ const getLenderRentals = asyncHandler(async (req, res) => {
 
     const rentals = await Rental.find({ product: { $in: productIds } })
         .populate('product')
-        .populate('renter', 'name email phone')
+        .populate('renter', 'name email phone identityProof')
         .sort({ createdAt: -1 });
 
     return res.status(200).json(new ApiResponse(200, rentals, "Lender requests fetched successfully"));

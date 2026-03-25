@@ -5,12 +5,13 @@ import { rentProduct, getUnavailableDates } from '../api/rentals';
 import { getProductReviews } from '../api/reviews';
 import { toggleWishlist, getWishlist } from '../api/users';
 import { useAuth } from '../Context/AuthContext';
-import { Button } from '../components/Ui/Button';
 import { 
     MapPin, User, ShieldCheck, Tag, ArrowLeft, Edit, Trash2, 
-    Calendar, AlertCircle, Star, Heart 
+    Calendar, AlertCircle, Star, Heart, CheckCircle2, Clock, 
+    Info, MessageCircle, Share2, Layers
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -41,7 +42,6 @@ const ProductDetails = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                // 1. Fetch Product, Dates, and Reviews in parallel
                 const [productRes, datesRes, reviewsRes] = await Promise.all([
                     getProductById(id),
                     getUnavailableDates(id),
@@ -51,7 +51,6 @@ const ProductDetails = () => {
                 const productData = productRes.data.data;
                 setProduct(productData);
 
-                // 2. Fetch Wishlist Status
                 if (user) {
                     try {
                         const wishlistRes = await getWishlist();
@@ -63,7 +62,6 @@ const ProductDetails = () => {
                     }
                 }
 
-                // 3. Format dates for Calendar
                 const formattedDates = datesRes.data.data.map(booking => ({
                     start: new Date(booking.startDate),
                     end: new Date(booking.endDate)
@@ -87,10 +85,8 @@ const ProductDetails = () => {
         fetchDetails();
     }, [id, navigate, user]); 
 
-    // Real-time Total Price Calculation
     useEffect(() => {
         setBookingError('');
-        
         if (startDate && endDate && product) {
             if (endDate <= startDate) {
                 setBookingError("End date must be after start date.");
@@ -123,15 +119,16 @@ const ProductDetails = () => {
 
     const handleWishlist = async () => {
         if (!user) {
-            alert("Please login to save items.");
+            toast.error("Please login to save items.");
             return navigate('/login');
         }
         try {
             setIsWishlisted(!isWishlisted);
             await toggleWishlist(product._id);
+            toast.success(isWishlisted ? "Removed from wishlist" : "Added to wishlist");
         } catch (error) {
             console.error("Wishlist action failed", error);
-            setIsWishlisted(!isWishlisted); // Revert on error
+            setIsWishlisted(!isWishlisted);
         }
     };
 
@@ -139,31 +136,29 @@ const ProductDetails = () => {
         if (window.confirm("Are you sure you want to delete this listing? This action cannot be undone.")) {
             try {
                 await deleteProduct(id);
+                toast.success("Listing deleted successfully");
                 navigate('/');
             } catch (error) {
-                alert("Failed to delete product");
+                toast.error("Failed to delete product");
             }
         }
     };
 
     const handleRent = async (e) => {
         e.preventDefault();
-        
         if (!user) {
-            alert("Please login to rent items.");
+            toast.error("Please login to rent items.");
             return navigate('/login');
         }
         
         if (!user.identityProof) {
-            const confirmVerification = window.confirm(
-                "⚠️ Identity Verification Required\n\nTo ensure safety, you must upload a Government ID once before renting.\n\nClick OK to verify now."
-            );
-            if (confirmVerification) navigate('/upload-id');
+            toast.error("Identity verification required to rent.");
+            navigate('/upload-id');
             return;
         }
 
         if (bookingError || !startDate || !endDate || !renterAddress) {
-            alert("Please fill in all fields including your usage address.");
+            toast.error("Please complete all booking details.");
             return;
         }
 
@@ -175,7 +170,7 @@ const ProductDetails = () => {
                 endDate: endDate.toISOString(), 
                 renterAddress 
             });
-            alert("✅ Request sent! The lender will review your request.");
+            toast.success("Request sent! The lender will review it.");
             navigate('/my-rentals');
         } catch (error) {
             setBookingError(error.response?.data?.message || "Failed to request rental");
@@ -185,8 +180,8 @@ const ProductDetails = () => {
     };
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center pt-20 bg-zinc-50 dark:bg-zinc-950 transition-colors">
-            <div className="w-8 h-8 border-4 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin"></div>
+        <div className="min-h-screen flex items-center justify-center pt-20 bg-white dark:bg-zinc-950 transition-colors">
+            <div className="w-10 h-10 border-4 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin"></div>
         </div>
     );
     
@@ -197,277 +192,254 @@ const ProductDetails = () => {
         ? product.productImages 
         : [product.productImage || '/default-placeholder.png'];
 
-    const CustomDateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
-        <div className="relative cursor-pointer" onClick={onClick}>
-            <input 
-                value={value} 
-                ref={ref}
-                readOnly
-                placeholder={placeholder}
-                className="w-full h-12 pl-10 pr-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-sm font-medium focus:ring-2 focus:ring-zinc-900 outline-none transition-all cursor-pointer" 
-            />
-            <Calendar className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-        </div>
-    ));
-
     return (
-        <div className="min-h-screen bg-white dark:bg-zinc-950 pt-28 pb-20 transition-colors duration-300">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
-                <button onClick={() => navigate(-1)} className="inline-flex items-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 mb-8 font-semibold text-sm transition-colors uppercase tracking-wider">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Search
-                </button>
+        <div className="min-h-screen bg-white dark:bg-zinc-950 pt-28 pb-20 transition-colors">
+            <div className="container-custom">
+                {/* Back Button & Actions */}
+                <div className="flex items-center justify-between mb-8">
+                    <button 
+                        onClick={() => navigate(-1)}
+                        className="btn-ghost pl-2 pr-4 flex items-center gap-2 font-bold"
+                    >
+                        <ArrowLeft className="w-5 h-5" /> Back
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={handleWishlist}
+                            className={`btn-ghost w-10 h-10 p-0 rounded-full flex items-center justify-center ${isWishlisted ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-950/30' : ''}`}
+                        >
+                            <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                        </button>
+                        {isOwner && (
+                            <>
+                                <Link to={`/edit-product/${product._id}`} className="btn-secondary px-4 py-2 text-sm">
+                                    <Edit className="w-4 h-4 mr-2" /> Edit
+                                </Link>
+                                <button onClick={handleDelete} className="btn-secondary px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30">
+                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-2 space-y-10">
-                        
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    {/* Left Side: Images & Info */}
+                    <div className="lg:col-span-7 space-y-10">
                         {/* Image Gallery */}
                         <div className="space-y-4">
-                            <div className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 shadow-sm relative group">
-                                <img src={displayImages[activeImageIndex]} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-105" />
-                                
-                                <button 
-                                    onClick={handleWishlist}
-                                    className={`absolute top-4 right-4 p-3 rounded-full shadow-lg backdrop-blur-md transition-all duration-300 ${
-                                        isWishlisted 
-                                        ? 'bg-white/90 text-red-500 fill-red-500 scale-110' 
-                                        : 'bg-black/20 text-white hover:bg-white hover:text-red-500'
-                                    }`}
-                                >
-                                    <Heart className={`w-6 h-6 ${isWishlisted ? 'fill-red-500' : ''}`} />
-                                </button>
-                            </div>
-                            
+                            <motion.div 
+                                layoutId="main-image"
+                                className="aspect-[16/10] rounded-[32px] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800"
+                            >
+                                <img 
+                                    src={displayImages[activeImageIndex]} 
+                                    alt={product.name} 
+                                    className="w-full h-full object-cover"
+                                />
+                            </motion.div>
                             {displayImages.length > 1 && (
-                                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                    {displayImages.map((imgUrl, index) => (
+                                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                                    {displayImages.map((img, idx) => (
                                         <button 
-                                            key={index} onClick={() => setActiveImageIndex(index)}
-                                            className={`h-24 w-32 flex-shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                                                activeImageIndex === index ? 'border-zinc-900 dark:border-zinc-100 opacity-100' : 'border-transparent opacity-50 hover:opacity-100'
-                                            }`}
+                                            key={idx}
+                                            onClick={() => setActiveImageIndex(idx)}
+                                            className={`relative shrink-0 w-24 aspect-square rounded-2xl overflow-hidden border-2 transition-all ${activeImageIndex === idx ? 'border-zinc-900 dark:border-zinc-50 scale-95' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                         >
-                                            <img src={imgUrl} className="w-full h-full object-cover" alt={`Thumbnail ${index + 1}`} />
+                                            <img src={img} alt="" className="w-full h-full object-cover" />
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        {/* Title & Info Section */}
-                        <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
-                            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
-                                <div>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">{product.name}</h1>
-                                        {reviewStats.totalReviews > 0 && (
-                                            <div className="flex items-center bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 px-2.5 py-1 rounded-md text-sm font-bold border border-amber-200 dark:border-amber-900/50">
-                                                <Star className="w-4 h-4 mr-1 fill-amber-500 text-amber-500" />
-                                                {reviewStats.averageRating} <span className="text-amber-600/70 dark:text-amber-500/70 ml-1 text-xs font-semibold">({reviewStats.totalReviews})</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center text-zinc-500 dark:text-zinc-400 font-medium">
-                                        <MapPin className="w-4 h-4 mr-1.5" />
-                                        {product.location}
+                        {/* Product Info */}
+                        <div className="space-y-8">
+                            <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-widest">
+                                        {product.category}
+                                    </span>
+                                    {product.quantity > 1 && (
+                                        <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
+                                            <Layers className="w-3 h-3" />
+                                            {product.quantity} Units Available
+                                        </span>
+                                    )}
+                                    <div className="flex items-center gap-1 text-amber-500">
+                                        <Star className="w-4 h-4 fill-current" />
+                                        <span className="text-sm font-black">{reviewStats.averageRating || 'New'}</span>
+                                        <span className="text-zinc-400 font-medium">({reviewStats.totalReviews} reviews)</span>
                                     </div>
                                 </div>
-                                
-                                {isOwner && (
-                                    <div className="flex gap-3 shrink-0">
-                                        <Button variant="outline" size="sm" onClick={() => navigate(`/edit-product/${product._id}`)}>
-                                            <Edit className="w-4 h-4 mr-2" /> Edit
-                                        </Button>
-                                        <Button variant="danger" size="sm" onClick={handleDelete}>
-                                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* 🔥 FIXED: Flat Tags/Meta with Correct Profile Link */}
-                            <div className="flex flex-wrap gap-4 py-6 border-t border-b border-zinc-100 dark:border-zinc-800 mb-8 transition-colors">
-                                {/* FIXED LINK HERE */}
-                                <Link to={`/profile/${product.owner?._id || product.owner}`} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 min-w-[200px] transition-colors cursor-pointer group">
-                                    <div className="w-10 h-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-sm group-hover:scale-105 transition-transform">
-                                        <User className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider mb-0.5 group-hover:text-blue-500 transition-colors">Lender Profile</p>
-                                        <p className="font-bold text-zinc-900 dark:text-zinc-50">{product.owner?.name || "LendSphere User"}</p>
-                                    </div>
-                                </Link>       
-                                
-                                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 min-w-[200px]">
-                                    <div className="w-10 h-10 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-sm">
-                                        <Tag className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider mb-0.5">Category</p>
-                                        <p className="font-bold text-zinc-900 dark:text-zinc-50">{product.category}</p>
-                                    </div>
+                                <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+                                    {product.name}
+                                </h1>
+                                <div className="flex items-center gap-2 mt-4 text-zinc-500 dark:text-zinc-400 font-medium">
+                                    <MapPin className="w-5 h-5 text-zinc-400" />
+                                    {product.location}
                                 </div>
                             </div>
 
-                            <div className="mb-12">
-                                <h3 className="font-bold text-xl text-zinc-900 dark:text-zinc-50 mb-4 tracking-tight">About this item</h3>
-                                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed whitespace-pre-line text-lg">
+                            <div className="h-px bg-zinc-100 dark:bg-zinc-900" />
+
+                            <div className="space-y-4">
+                                <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Description</h3>
+                                <p className="text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">
                                     {product.description}
                                 </p>
                             </div>
 
-                            {/* Reviews Section */}
-                            <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800">
-                                <h3 className="font-bold text-2xl text-zinc-900 dark:text-zinc-50 mb-6 tracking-tight flex items-center gap-2">
-                                    Reviews
-                                    <span className="text-sm bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-2.5 py-0.5 rounded-full font-bold">
-                                        {reviewStats.totalReviews}
-                                    </span>
-                                </h3>
-
-                                {reviews.length === 0 ? (
-                                    <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl p-8 text-center border border-dashed border-zinc-300 dark:border-zinc-800">
-                                        <Star className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-                                        <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg mb-1">No reviews yet</h4>
-                                        <p className="text-zinc-500 dark:text-zinc-400 text-sm">Be the first to rent this gear and share your experience!</p>
+                            {/* Lender Profile */}
+                            <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
+                                        {product.owner?.avatar ? (
+                                            <img src={product.owner.avatar} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-6 h-6 text-zinc-400" />
+                                        )}
                                     </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {reviews.map((review) => (
-                                            <div key={review._id} className="p-5 bg-zinc-50 dark:bg-zinc-900/30 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 font-bold text-xs uppercase">
-                                                            {review.reviewer?.name?.charAt(0) || "U"}
-                                                        </div>
-                                                        <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">{review.reviewer?.name || "Anonymous User"}</span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        {[...Array(review.rating)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />)}
-                                                        {[...Array(5 - review.rating)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-700" />)}
-                                                    </div>
-                                                </div>
-                                                <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">"{review.comment}"</p>
-                                                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-3 font-medium">
-                                                    {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </p>
-                                            </div>
-                                        ))}
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Listed By</p>
+                                        <p className="text-lg font-black text-zinc-900 dark:text-zinc-50 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                            {product.owner?.name || 'Lender'}
+                                        </p>
                                     </div>
-                                )}
+                                </div>
+                                <Link to={`/profile/${product.owner?._id}`} className="btn-secondary px-4 py-2 text-sm">
+                                    View Profile
+                                </Link>
                             </div>
-
                         </div>
-                    </motion.div>
-
-                    {/* RIGHT COLUMN: Sticky Booking Card */}
-                    <div className="relative z-10">
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="sticky top-28 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6 lg:p-8 transition-colors">
-                            
-                            <div className="flex items-end gap-2 mb-8 pb-6 border-b border-zinc-200 dark:border-zinc-800">
-                                <span className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">₹{product.pricePerDay}</span>
-                                <span className="text-zinc-500 dark:text-zinc-400 font-semibold mb-1">/ day</span>
-                            </div>
-
-                            {!isOwner ? (
-                                <form onSubmit={handleRent} className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        
-                                        <div className="space-y-1.5 flex flex-col">
-                                            <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Start Date</label>
-                                            <DatePicker
-                                                selected={startDate}
-                                                onChange={(date) => setStartDate(date)}
-                                                selectsStart
-                                                startDate={startDate}
-                                                endDate={endDate}
-                                                minDate={new Date()}
-                                                excludeDateIntervals={unavailableDates}
-                                                customInput={<CustomDateInput placeholder="Check-in" />}
-                                                calendarClassName="font-sans border border-zinc-200 dark:border-zinc-700 shadow-xl rounded-xl"
-                                                dayClassName={(date) => "hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"}
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1.5 flex flex-col">
-                                            <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">End Date</label>
-                                            <DatePicker
-                                                selected={endDate}
-                                                onChange={(date) => setEndDate(date)}
-                                                selectsEnd
-                                                startDate={startDate}
-                                                endDate={endDate}
-                                                minDate={startDate || new Date()}
-                                                excludeDateIntervals={unavailableDates}
-                                                customInput={<CustomDateInput placeholder="Check-out" />}
-                                                calendarClassName="font-sans border border-zinc-200 dark:border-zinc-700 shadow-xl rounded-xl"
-                                                dayClassName={(date) => "hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1.5 mt-2">
-                                        <label className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Usage Address / Your Location</label>
-                                        <div className="relative">
-                                            <input 
-                                                type="text" required placeholder="e.g. 101 Link Road, Bandra West"
-                                                className="w-full h-12 pl-10 pr-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 text-sm font-medium focus:ring-2 focus:ring-zinc-900 outline-none transition-all" 
-                                                value={renterAddress} onChange={e => setRenterAddress(e.target.value)} 
-                                            />
-                                            <MapPin className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                        </div>
-                                    </div>
-
-                                    {bookingError ? (
-                                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-lg flex items-start gap-2 text-sm text-red-600 dark:text-red-400 font-medium">
-                                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                                            {bookingError}
-                                        </motion.div>
-                                    ) : (
-                                        totalPrice > 0 && (
-                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3 overflow-hidden">
-                                                <div className="flex justify-between text-zinc-600 dark:text-zinc-400 text-sm font-medium">
-                                                    <span>₹{product.pricePerDay} x {totalPrice / product.pricePerDay} days</span>
-                                                    <span>₹{totalPrice}</span>
-                                                </div>
-                                                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-zinc-900 dark:text-zinc-50 font-black text-lg">
-                                                    <span>Total</span>
-                                                    <span>₹{totalPrice}</span>
-                                                </div>
-                                            </motion.div>
-                                        )
-                                    )}
-
-                                    <Button 
-                                        className="w-full h-14 text-base font-bold rounded-xl" 
-                                        type="submit"
-                                        disabled={!!bookingError || !startDate || !endDate || !renterAddress || bookingLoading}
-                                    >
-                                        {bookingLoading ? "Processing..." : "Request to Rent"}
-                                    </Button>
-                                    <p className="text-xs text-center text-zinc-500 dark:text-zinc-400 font-medium">You won't be charged until the lender approves.</p>
-                                </form>
-                            ) : (
-                                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-6 rounded-xl text-center transition-colors">
-                                    <p className="font-bold text-zinc-900 dark:text-zinc-50 mb-1">This is your listing</p>
-                                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">Check your dashboard for incoming requests.</p>
-                                    <Button variant="outline" className="w-full" onClick={() => navigate('/lender-dashboard')}>Go to Dashboard</Button>
-                                </div>
-                            )}
-                            
-                            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800 space-y-3 transition-colors">
-                                <div className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-                                    <ShieldCheck className="w-5 h-5 text-zinc-900 dark:text-zinc-100" />
-                                    <span className="font-semibold">Identity Verified Lenders</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400">
-                                    <ShieldCheck className="w-5 h-5 text-zinc-900 dark:text-zinc-100" />
-                                    <span className="font-semibold">Secure P2P Payments</span>
-                                </div>
-                            </div>
-                        </motion.div>
                     </div>
 
+                    {/* Right Side: Booking Sidebar */}
+                    <div className="lg:col-span-5">
+                        <div className="sticky top-32 space-y-6">
+                            <div className="p-8 rounded-[40px] bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm">
+                                <div className="flex items-baseline gap-2 mb-8 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+                                    <span className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">₹{product.pricePerDay}</span>
+                                    <span className="text-lg text-zinc-400 font-bold uppercase tracking-widest">/ Day</span>
+                                </div>
+
+                                <form onSubmit={handleRent} className="space-y-6">
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Start Date</label>
+                                                <div className="relative">
+                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10 pointer-events-none" />
+                                                    <DatePicker
+                                                        selected={startDate}
+                                                        onChange={date => setStartDate(date)}
+                                                        selectsStart
+                                                        startDate={startDate}
+                                                        endDate={endDate}
+                                                        minDate={new Date()}
+                                                        excludeDateIntervals={unavailableDates}
+                                                        placeholderText="Pick date"
+                                                        className="input-modern pl-11 text-sm bg-zinc-50 dark:bg-zinc-950 border-zinc-100 dark:border-zinc-800"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">End Date</label>
+                                                <div className="relative">
+                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10 pointer-events-none" />
+                                                    <DatePicker
+                                                        selected={endDate}
+                                                        onChange={date => setEndDate(date)}
+                                                        selectsEnd
+                                                        startDate={startDate}
+                                                        endDate={endDate}
+                                                        minDate={startDate || new Date()}
+                                                        excludeDateIntervals={unavailableDates}
+                                                        placeholderText="Pick date"
+                                                        className="input-modern pl-11 text-sm bg-zinc-50 dark:bg-zinc-950 border-zinc-100 dark:border-zinc-800"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Delivery Address</label>
+                                            <div className="relative">
+                                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Where will you use this?"
+                                                    className="input-modern pl-11 text-sm bg-zinc-50 dark:bg-zinc-950 border-zinc-100 dark:border-zinc-800"
+                                                    value={renterAddress}
+                                                    onChange={(e) => setRenterAddress(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <AnimatePresence>
+                                        {bookingError && (
+                                            <motion.div 
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-bold border border-red-100 dark:border-red-900/50"
+                                            >
+                                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                                {bookingError}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    {totalPrice > 0 && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800"
+                                        >
+                                            <div className="flex justify-between items-center mb-2 text-sm font-medium text-zinc-500">
+                                                <span>Rental Duration</span>
+                                                <span className="text-zinc-900 dark:text-zinc-50 font-black">{Math.ceil(Math.abs(endDate - startDate) / (1000 * 60 * 60 * 24)) || 1} Days</span>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                                                <span className="text-lg font-black text-zinc-900 dark:text-zinc-50">Total Price</span>
+                                                <span className="text-2xl font-black text-blue-600 dark:text-blue-400">₹{totalPrice}</span>
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={bookingLoading || isOwner}
+                                        className="btn-primary w-full py-4 text-lg font-black shadow-xl shadow-zinc-200 dark:shadow-none disabled:bg-zinc-100 dark:disabled:bg-zinc-900 disabled:text-zinc-400"
+                                    >
+                                        {bookingLoading ? (
+                                            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                                        ) : isOwner ? (
+                                            "You own this item"
+                                        ) : (
+                                            "Request Rental"
+                                        )}
+                                    </button>
+                                </form>
+
+                                <p className="text-center mt-6 text-xs text-zinc-400 font-medium">
+                                    You won't be charged yet. The lender needs to approve your request first.
+                                </p>
+                            </div>
+
+                            {/* Trust Badge */}
+                            <div className="p-6 rounded-3xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex gap-4">
+                                <ShieldCheck className="w-6 h-6 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-black text-blue-900 dark:text-blue-200 mb-1">LendSphere Protection</p>
+                                    <p className="text-xs text-blue-700 dark:text-blue-400 font-medium leading-relaxed">
+                                        All rentals are covered by our safety guarantee. We verify all users and hold payments securely.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

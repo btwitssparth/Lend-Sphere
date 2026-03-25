@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProductById, updateProduct } from '../api/products';
 import { motion } from 'framer-motion';
-import { Upload, DollarSign, MapPin, Type, AlignLeft, Tag, ArrowLeft, Loader2 } from 'lucide-react';
+import { Upload, IndianRupee, MapPin, Type, AlignLeft, Tag, ArrowLeft, Loader2, Layers, X } from 'lucide-react';
 import { Button } from '../components/Ui/Button';
 
 const EditProduct = () => {
@@ -17,6 +17,7 @@ const EditProduct = () => {
         category: '',
         pricePerDay: '',
         location: '',
+        quantity: '1',
         productImages: []
     });
     
@@ -34,6 +35,7 @@ const EditProduct = () => {
                     category: data.category,
                     pricePerDay: data.pricePerDay,
                     location: data.location,
+                    quantity: data.quantity || 1,
                     productImages: []
                 });
                 
@@ -54,14 +56,28 @@ const EditProduct = () => {
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files); 
-        if (files.length > 5) {
-            alert("You can only upload up to 5 images.");
+        const currentNewFiles = formData.productImages || [];
+        
+        if (currentNewFiles.length + files.length > 5) {
+            alert("You can only upload up to 5 new images.");
             return;
         }
 
-        setFormData({ ...formData, productImages: files });
-        const newPreviews = files.map(file => URL.createObjectURL(file));
+        const newFiles = [...currentNewFiles, ...files];
+        setFormData({ ...formData, productImages: newFiles });
+        
+        const newPreviews = newFiles.map(file => URL.createObjectURL(file));
         setPreviews(newPreviews);
+    };
+
+    const removeNewImage = (index) => {
+        const newPreviews = [...previews];
+        newPreviews.splice(index, 1);
+        setPreviews(newPreviews);
+
+        const newFiles = [...formData.productImages];
+        newFiles.splice(index, 1);
+        setFormData({ ...formData, productImages: newFiles });
     };
 
     const handleSubmit = async (e) => {
@@ -126,11 +142,22 @@ const EditProduct = () => {
                                 />
                                 
                                 {previews.length > 0 ? (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-20 pointer-events-none">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-20">
                                         {previews.map((src, index) => (
-                                            <div key={index} className="relative h-24 w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-zinc-700">
+                                            <div key={index} className="relative h-24 w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-zinc-700 group">
                                                 <img src={src} alt={`New Preview ${index + 1}`} className="w-full h-full object-cover" />
-                                                <div className="absolute top-1 right-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded font-bold shadow-sm">NEW</div>
+                                                <div className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded font-bold shadow-sm">NEW</div>
+                                                <button 
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        removeNewImage(index);
+                                                    }}
+                                                    className="absolute top-1 right-1 w-6 h-6 bg-black/50 backdrop-blur-md text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
@@ -193,8 +220,16 @@ const EditProduct = () => {
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Price per Day</label>
                                 <div className="relative">
-                                    <DollarSign className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
+                                    <IndianRupee className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
                                     <input type="number" name="pricePerDay" value={formData.pricePerDay} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors">Quantity</label>
+                                <div className="relative">
+                                    <Layers className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 dark:text-slate-500 transition-colors" />
+                                    <input type="number" name="quantity" min="1" value={formData.quantity} onChange={handleChange} required className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold" />
                                 </div>
                             </div>
 
