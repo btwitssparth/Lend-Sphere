@@ -239,6 +239,9 @@ const Navbar = () => {
                         <p className="text-xs text-zinc-400 font-medium truncate mt-0.5">{user.email}</p>
                       </div>
                       <MenuItem to={`/profile/${user._id}`} icon={User} label="My Profile" onClick={() => setProfileOpen(false)} />
+                      {user.roles?.admin && (
+                        <MenuItem to="/admin" icon={ShieldAlert} label="Admin Console" onClick={() => setProfileOpen(false)} />
+                      )}
                       <MenuItem to="/lender-dashboard" icon={LayoutDashboard} label="Dashboard" onClick={() => setProfileOpen(false)} />
                       <MenuItem to="/my-rentals" icon={Package} label="My Rentals" onClick={() => setProfileOpen(false)} />
                       <MenuItem to="/wishlist" icon={Heart} label="Wishlist" onClick={() => setProfileOpen(false)} />
@@ -300,6 +303,12 @@ const Navbar = () => {
                       <Package className="w-5 h-5 text-emerald-500" />
                       <span className="text-sm font-black">My Rentals</span>
                     </Link>
+                    {user.roles?.admin && (
+                      <Link to="/admin" className="col-span-2 p-4 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 flex items-center gap-3">
+                        <ShieldAlert className="w-5 h-5 text-red-600 dark:text-red-500" />
+                        <span className="text-sm font-black text-red-600 dark:text-red-500">Admin Console</span>
+                      </Link>
+                    )}
                   </div>
                   <Link to="/add-product" className="block w-full btn-primary py-4 text-center font-black">
                     List an Item

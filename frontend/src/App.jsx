@@ -19,6 +19,7 @@ import PublicProfile from './pages/PublicProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import RenterDisputes from './pages/RenterDisputes';
 import Wishlist from "./pages/Wishlist";
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -66,7 +67,11 @@ function App() {
           <Route path="/upload-id" element={<UploadId />} />
           
           {/* Admin & Resolution Routes */}
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />
           <Route path="/disputes" element={<RenterDisputes />} />
 
           {/* Wishlist Route */}
