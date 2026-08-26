@@ -212,43 +212,7 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 
 ---
 
-## 📸 Screenshots
 
-<table>
-  <tr>
-    <td align="center">
-      <img width="1456" height="813" alt="image" src="https://github.com/user-attachments/assets/e4769caf-c87b-4d57-a31c-bec2849e65cf" />
-
-      <br /><sub><b>Home Page — Product Grid</b></sub>
-    </td>
-    <td align="center">
-      <img src="./docs/assets/screenshot-map.png" alt="Home Page — Map View" />
-      <br /><sub><b>Home Page — Interactive Map</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="./docs/assets/screenshot-product.png" alt="Product Details & Booking" />
-      <br /><sub><b>Product Details & Date Picker</b></sub>
-    </td>
-    <td align="center">
-      <img src="./docs/assets/screenshot-dashboard.png" alt="Lender Dashboard" />
-      <br /><sub><b>Lender Dashboard — Revenue & Requests</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="./docs/assets/screenshot-dark.png" alt="Dark Mode" />
-      <br /><sub><b>OLED Dark Mode</b></sub>
-    </td>
-    <td align="center">
-      <img src="./docs/assets/screenshot-admin.png" alt="Admin Dispute Console" />
-      <br /><sub><b>Admin Dispute Resolution Console</b></sub>
-    </td>
-  </tr>
-</table>
-
----
 
 ## 🗂️ Project Structure
 
@@ -344,12 +308,12 @@ SOFTWARE.
 
 ***Parth Jain* — Bsc.IT Graduate(2026)
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-yourportfolio.dev-000000?style=flat-square&logo=vercel&logoColor=white)](https://yourportfolio.dev)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/yourusername)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/yourusername)
-[![Email](https://img.shields.io/badge/Email-hello@youremail.com-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:hello@youremail.com)
 
-**Project Link:** [https://github.com/yourusername/lend-sphere](https://github.com/yourusername/lend-sphere)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/parth-jain-8200aa270)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/btwitssparth)
+[![Email](https://img.shields.io/badge/Email-hello@youremail.com-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:parth.jainworks@gmail.com)
+
+**Project Link:** [https://github.com/btwitssparth/lend-sphere](https://github.com/btwitssparth/lend-sphere)
 
 ---
 
