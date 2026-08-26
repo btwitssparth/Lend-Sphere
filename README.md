@@ -28,7 +28,8 @@
 
 ---
 
-![Lend-Sphere Hero](./docs/assets/hero-screenshot.png)
+<img width="1768" height="832" alt="image" src="https://github.com/user-attachments/assets/d974d3a1-524a-411a-863c-b9dd6b241e59" />
+
 
 ---
 
@@ -216,7 +217,8 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 <table>
   <tr>
     <td align="center">
-      <img src="./docs/assets/screenshot-home.png" alt="Home Page — Grid View" />
+      <img width="1456" height="813" alt="image" src="https://github.com/user-attachments/assets/e4769caf-c87b-4d57-a31c-bec2849e65cf" />
+
       <br /><sub><b>Home Page — Product Grid</b></sub>
     </td>
     <td align="center">
