@@ -311,7 +311,7 @@ SOFTWARE.
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/parth-jain-8200aa270)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/btwitssparth)
-[![Email](https://img.shields.io/badge/Email-hello@youremail.com-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:parth.jainworks@gmail.com)
+[![Email](https://img.shields.io/badge/Email-parth.jainworks@gmail.com-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:parth.jainworks@gmail.com)
 
 **Project Link:** [https://github.com/btwitssparth/lend-sphere](https://github.com/btwitssparth/lend-sphere)
 
