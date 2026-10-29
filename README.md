@@ -281,7 +281,7 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 ```
 MIT License
 
-Copyright (c) 2026 [Your Name]
+Copyright (c) 2026 Parth Jain
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -319,7 +319,7 @@ SOFTWARE.
 
 <div align="center">
 
-Made with ❤️ in Mumbai &nbsp;·&nbsp; Built to impress, designed to ship.
+Made By Parth Jain in Mumbai &nbsp;·&nbsp; Built to impress, designed to ship.
 
 <br />
 
