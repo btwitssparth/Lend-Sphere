@@ -12,7 +12,7 @@ export const SocialAuth = () => {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        console.log("Google Token:", tokenResponse);
+        console.log("Google Token:");
         // Send the Access Token to backend
         const data = await googleLoginUser(tokenResponse.access_token);
         
